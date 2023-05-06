@@ -11,6 +11,7 @@ public class Main {
     private static int SIZE = 4;
 
     public static void main(String[] args) {
+        // TODO: Use https://picocli.info to create console app that loads graph from file
         System.out.println("Hello world!");
         Graph<String, DefaultEdge> stringGraph = createStringGraph();
         System.out.println("-- toString output");

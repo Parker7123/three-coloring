@@ -31,10 +31,12 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         if (graph.vertexSet().size() < Math.sqrt(sourceGraphSize)) {
             return new ThreeColoringForGraphAndColoredNeighbors<>(graph, sourceGraph, coloredNeighbors).getColoring();
         }
+        // TODO: Implement PlanarSeparatorFindingAlgorithm and replace
         SeparatorFindingAlgorithm<V> separatorFindingAlgorithm = new SimpleSeparatorFindingAlgorithm<>(graph);
         Set<V> separator = separatorFindingAlgorithm.getSparator();
         Set<V> subsetA = separatorFindingAlgorithm.getSubsetA();
         Set<V> subsetB = separatorFindingAlgorithm.getSubsetB();
+        // TODO: AsSubgraph is not so optimal, replace with creating separate grap
         Graph<V, E> graphInducedBySeparator = new AsSubgraph<>(graph, separator);
         Graph<V, E> graphInducedBySubsetA = new AsSubgraph<>(graph, subsetA);
         Graph<V, E> graphInducedBySubsetB = new AsSubgraph<>(graph, subsetB);

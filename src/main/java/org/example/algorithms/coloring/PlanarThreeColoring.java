@@ -28,7 +28,7 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
     }
 
     private Coloring<V> threeColoringForPlanarGraphAndColoredNeighbors(Graph<V, E> graph, Coloring<V> coloredNeighbors) {
-        if (graph.vertexSet().size() < Math.sqrt(sourceGraphSize)) {
+        if (graph.vertexSet().size() <= Math.sqrt(sourceGraphSize)) {
             return new ThreeColoringForGraphAndColoredNeighbors<>(graph, sourceGraph, coloredNeighbors).getColoring();
         }
         // TODO: Implement PlanarSeparatorFindingAlgorithm and replace

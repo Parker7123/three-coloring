@@ -1,16 +1,21 @@
 package org.example.algorithms.coloring;
 
+import com.google.common.collect.Maps;
 import org.example.algorithms.separator.SeparatorFindingAlgorithm;
 import org.example.algorithms.separator.SimpleSeparatorFindingAlgorithm;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 import org.jgrapht.alg.interfaces.VertexColoringAlgorithm;
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.AsSubgraph;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static org.example.algorithms.coloring.ThreeColoringUtils.emptyThreeColoring;
-import static org.example.algorithms.coloring.ThreeColoringUtils.sumOfColorings;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.stream.Collectors.*;
+import static org.example.algorithms.coloring.ThreeColoringUtils.*;
 
 public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
 
@@ -19,7 +24,7 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
 
     @Override
     public Coloring<V> getColoring() {
-        return threeColoringForPlanarGraphAndColoredNeighbors(sourceGraph, emptyThreeColoring());
+        return threeColoringForPlanarGraphAndColoredNeighbors(sourceGraph, new HashMap<>());
     }
 
     public PlanarThreeColoring(Graph<V, E> sourceGraph) {
@@ -27,9 +32,9 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         this.sourceGraphSize = sourceGraph.vertexSet().size();
     }
 
-    private Coloring<V> threeColoringForPlanarGraphAndColoredNeighbors(Graph<V, E> graph, Coloring<V> coloredNeighbors) {
+    private Coloring<V> threeColoringForPlanarGraphAndColoredNeighbors(Graph<V, E> graph, Map<V, Set<Integer>> restrictedColors) {
         if (graph.vertexSet().size() <= Math.sqrt(sourceGraphSize)) {
-            return new ThreeColoringForGraphAndColoredNeighbors<>(graph, sourceGraph, coloredNeighbors).getColoring();
+            return new ThreeColoringForGraphAndColoredNeighbors<>(graph, unmodifiableMap(restrictedColors)).getColoring();
         }
         // TODO: Implement PlanarSeparatorFindingAlgorithm and replace
         SeparatorFindingAlgorithm<V> separatorFindingAlgorithm = new SimpleSeparatorFindingAlgorithm<>(graph);
@@ -41,22 +46,42 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         Graph<V, E> graphInducedBySubsetA = new AsSubgraph<>(graph, subsetA);
         Graph<V, E> graphInducedBySubsetB = new AsSubgraph<>(graph, subsetB);
 
-        var threeColoringAlgorithm = new ThreeColoringForGraphAndColoredNeighbors<>(graphInducedBySeparator, graph,
-                coloredNeighbors);
+        var threeColoringAlgorithm = new ThreeColoringForGraphAndColoredNeighbors<>(graphInducedBySeparator,
+                unmodifiableMap(restrictedColors));
         List<Coloring<V>> validSeparatorColorings = threeColoringAlgorithm.getListOfValidColorings();
         if (validSeparatorColorings.isEmpty()) {
             return null;
         }
         for (Coloring<V> separatorColoring : validSeparatorColorings) {
-            var coloredNeighborsWithSeparator = sumOfColorings(coloredNeighbors, separatorColoring);
+            var currentlyRestrictedColors = generateRestrictedColors(separatorColoring);
+            var mergedRestrictedColors = mergeRestrictedColors(restrictedColors, currentlyRestrictedColors);
+            // TODO: idea: introduce map: vertex -> color
+            // and update these this map when returning coloring
             var subsetAColoring = threeColoringForPlanarGraphAndColoredNeighbors(graphInducedBySubsetA,
-                    coloredNeighborsWithSeparator);
+                    mergedRestrictedColors);
             var subsetBColoring = threeColoringForPlanarGraphAndColoredNeighbors(graphInducedBySubsetB,
-                    coloredNeighborsWithSeparator);
+                    mergedRestrictedColors);
             if (subsetAColoring != null && subsetBColoring != null) {
                 return sumOfColorings(separatorColoring, subsetAColoring, subsetBColoring);
             }
         }
         return null;
+    }
+
+    private Map<V, Set<Integer>> generateRestrictedColors(Coloring<V> coloring) {
+        return coloring.getColors().entrySet().stream()
+                .flatMap(vColorEntry -> sourceGraph.edgesOf(vColorEntry.getKey())
+                        .stream().map(edge -> new Pair<>(
+                                Graphs.getOppositeVertex(sourceGraph, edge, vColorEntry.getKey()),
+                                vColorEntry.getValue()))
+                ).distinct()
+                .collect(groupingBy(Pair::getFirst, mapping(Pair::getSecond, toSet())));
+    }
+
+    private Map<V, Set<Integer>> mergeRestrictedColors(Map<V, Set<Integer>> c1,Map<V, Set<Integer>>c2) {
+        return Stream.of(c1, c2)
+                .flatMap(vSetMap -> vSetMap.entrySet().stream())
+                .collect(groupingBy(Map.Entry::getKey, mapping(Map.Entry::getValue,
+                        Collectors.flatMapping(Collection::stream, toSet()))));
     }
 }

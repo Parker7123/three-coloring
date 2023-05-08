@@ -20,16 +20,9 @@ public class ThreeColoringForGraphAndColoredNeighbors<V, E> implements VertexCol
     private final Graph<V, E> sourceGraph;
     private final Map<V, Set<Integer>> restrictedColors;
 
-    public ThreeColoringForGraphAndColoredNeighbors(Graph<V, E> sourceGraph, Graph<V, E> graphWithNeighbors,
-                                                    Coloring<V> coloredNeighbors) {
+    public ThreeColoringForGraphAndColoredNeighbors(Graph<V, E> sourceGraph, Map<V, Set<Integer>> restrictedColors) {
         this.sourceGraph = sourceGraph;
-        // TODO: refactor if possible
-        restrictedColors = sourceGraph.vertexSet().stream()
-                .flatMap(vertex -> graphWithNeighbors.edgesOf(vertex).stream()
-                        .map(edge -> new Pair<>(vertex, Graphs.getOppositeVertex(sourceGraph, edge, vertex))))
-                .filter(vvPair -> coloredNeighbors.getColors().containsKey(vvPair.getSecond()))
-                .map(vvPair -> new Pair<>(vvPair.getFirst(), coloredNeighbors.getColors().get(vvPair.getSecond())))
-                .collect(groupingBy(Pair::getFirst, mapping(Pair::getSecond, toSet())));
+        this.restrictedColors = restrictedColors;
     }
 
     @Override

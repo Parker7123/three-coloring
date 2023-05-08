@@ -68,6 +68,9 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         return null;
     }
 
+    /**
+     * Complexity: O(n), iterates over edges connected to colored vertices (planar graphs have O(n) edges)
+     */
     private Map<V, Set<Integer>> generateRestrictedColors(Coloring<V> coloring) {
         return coloring.getColors().entrySet().stream()
                 .flatMap(vColorEntry -> sourceGraph.edgesOf(vColorEntry.getKey())
@@ -78,6 +81,9 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
                 .collect(groupingBy(Pair::getFirst, mapping(Pair::getSecond, toSet())));
     }
 
+    /**
+     * Complexity: O(n)
+     */
     private Map<V, Set<Integer>> mergeRestrictedColors(Map<V, Set<Integer>> c1,Map<V, Set<Integer>>c2) {
         return Stream.of(c1, c2)
                 .flatMap(vSetMap -> vSetMap.entrySet().stream())

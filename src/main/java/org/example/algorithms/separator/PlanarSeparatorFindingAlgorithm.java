@@ -68,7 +68,8 @@ public class PlanarSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAl
         subsetA = vertexSetExceedingOneThird.orElseGet(() -> connectedComponents.stream()
                 .reduce((set1, set2) -> set1.size() <= n / 3 ? Sets.union(set1, set2) : set1).orElseThrow()
                 .stream().collect(toUnmodifiableSet()));
-        subsetB = sourceGraph.vertexSet().stream().filter(v -> !subsetA.contains(v)).collect(toUnmodifiableSet());
+        subsetB = sourceGraph.vertexSet().stream()
+                .filter(v -> !subsetA.contains(v)).collect(toUnmodifiableSet());
     }
 
     private void runAlgorithm() {
@@ -80,11 +81,15 @@ public class PlanarSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAl
                 .max(Comparator.comparing(Set::size))
                 .orElseThrow();
         Graph<V, E> biggestComponentGraph = new AsSubgraph<>(sourceGraph, biggestComponent);
-        // znajdź poziomy bfsem
+        // znajdź poziomy bfsem - BreadthFirstIterator
         // sprawdź warunki czy już ok
         // nowy graf, zastępujemi jakieś wierzchołki jednym
         // drzewo rozpinające
         // triangulacja
         // całe szukanie cyklu
+    }
+
+    private Graph<V, E> triangulate() {
+        return null;
     }
 }

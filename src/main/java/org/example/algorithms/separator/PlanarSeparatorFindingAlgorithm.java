@@ -74,22 +74,26 @@ public class PlanarSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAl
 
     private void runAlgorithm() {
         preprocessing();
-        if (separator != null) {
+        if (this.separator != null) {
             return;
         }
        Set<V> biggestComponent = connectedComponents.stream()
                 .max(Comparator.comparing(Set::size))
                 .orElseThrow();
         Graph<V, E> biggestComponentGraph = new AsSubgraph<>(sourceGraph, biggestComponent);
-        // znajdź poziomy bfsem - BreadthFirstIterator
-        // sprawdź warunki czy już ok
-        // nowy graf, zastępujemi jakieś wierzchołki jednym
-        // drzewo rozpinające
-        // triangulacja
-        // całe szukanie cyklu
-    }
 
-    private Graph<V, E> triangulate() {
-        return null;
+        var connectedSeparatorAlg = new PlanarConnectedSeparatorFindingAlgorithm<>(biggestComponentGraph);
+
+        this.separator = connectedSeparatorAlg.getSparator();
+        if (connectedSeparatorAlg.getSubsetA().size() > connectedSeparatorAlg.getSubsetB().size()) {
+            this.subsetA = connectedSeparatorAlg.getSubsetA();
+            this.subsetB = connectedSeparatorAlg.getSubsetB();
+        } else {
+            this.subsetA = connectedSeparatorAlg.getSubsetB();
+            this.subsetB = connectedSeparatorAlg.getSubsetA();
+        }
+        this.subsetB = sourceGraph.vertexSet().stream()
+                .filter(v -> !subsetA.contains(v) && !separator.contains(v))
+                .collect(toUnmodifiableSet());
     }
 }

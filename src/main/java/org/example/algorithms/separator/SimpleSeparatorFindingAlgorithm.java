@@ -29,7 +29,7 @@ public class SimpleSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAl
 
     private void computeSeparatorAndSets() {
         if (sourceGraph.vertexSet().isEmpty()) {
-            this.separator =  Collections.emptySet();
+            this.separator = Collections.emptySet();
         }
         V isolatedVertex = sourceGraph.vertexSet().stream().findFirst().orElseThrow();
         this.separator = sourceGraph.edgesOf(isolatedVertex).stream()

@@ -46,6 +46,7 @@ public class EmbeddingToDCELConverter {
             DoublyLinkedList<DCEL.Node<V, E>> face = new DoublyLinkedList<>();
             nodesInFace.forEach(face::addLast);
             faces.add(new DCEL.Face<>(face));
+            nodesInFace.forEach(edgeToNextEdge::remove);
         }
         return new DCEL<>(faces);
     }

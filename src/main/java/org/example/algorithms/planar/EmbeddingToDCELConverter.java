@@ -9,7 +9,9 @@ import java.util.*;
 
 /**
  * Converts combinatorial embedding to simplified doubly connected edge list <p>
- * <a href="https://en.wikipedia.org/wiki/Doubly_connected_edge_list">link</a>
+ * <a href="https://math.stackexchange.com/questions/4564963/from-combinatorial-embedding-to-dcel-in-linear-time">
+ *     link to algorithm description
+ * </a>
  */
 
 public class EmbeddingToDCELConverter {

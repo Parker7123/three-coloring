@@ -3,6 +3,7 @@ package org.example.algorithms.planar;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
+import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
 import org.jgrapht.util.DoublyLinkedList;
 
 import java.util.*;
@@ -15,6 +16,11 @@ import java.util.*;
  */
 
 public class EmbeddingToDCELConverter {
+
+    public static <V, E> DCEL<V, E> buildDcelFromGraph(Graph<V, E> graph) {
+        var embedding = new BoyerMyrvoldPlanarityInspector<>(graph).getEmbedding();
+        return convert(embedding);
+    }
 
     public static <V, E> DCEL<V, E> convert(PlanarityTestingAlgorithm.Embedding<V, E> embedding) {
         List<DCEL.Face<V, E>> faces = new ArrayList<>();
@@ -55,6 +61,6 @@ public class EmbeddingToDCELConverter {
             faces.add(new DCEL.Face<>(face));
             nodesInFace.forEach(edgeToNextEdge::remove);
         }
-        return new DCEL<>(faces);
+        return new DCEL<>(faces, graph);
     }
 }

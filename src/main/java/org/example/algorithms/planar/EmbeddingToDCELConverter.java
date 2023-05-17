@@ -25,24 +25,31 @@ public class EmbeddingToDCELConverter {
             DCEL.Node<V, E> firstNode = null;
             DCEL.Node<V, E> prevnode = null;
             for (E edge : edgesAroundV) {
-                V target = Graphs.getOppositeVertex(graph, edge, v);
+                V oppositeVertex = Graphs.getOppositeVertex(graph, edge, v);
                 if (prevnode == null) {
-                    prevnode = new DCEL.Node<>(v, target, edge);
+                    prevnode = new DCEL.Node<>(oppositeVertex, v, edge);
                     firstNode = prevnode;
                 } else {
-                    DCEL.Node<V, E> node = new DCEL.Node<>(v, target, edge);
+                    DCEL.Node<V, E> node = new DCEL.Node<>(v, oppositeVertex, edge);
                     edgeToNextEdge.put(prevnode, node);
-                    prevnode = node;
+                    prevnode = new DCEL.Node<>(oppositeVertex, v, edge);
                 }
             }
             if (firstNode != prevnode) {
-                edgeToNextEdge.put(prevnode, firstNode);
+                edgeToNextEdge.put(prevnode, new DCEL.Node<>(firstNode.target(), firstNode.v(), firstNode.edge()));
             }
         }
         while (!edgeToNextEdge.isEmpty()) {
-            var nodesInFace = edgeToNextEdge.keySet().stream()
-                    .takeWhile(node -> !edgeToNextEdge.get(node).equals(node))
-                    .toList();
+            var nodesInFace = new LinkedHashSet<DCEL.Node<V,E>>();
+            var currentNode = edgeToNextEdge.keySet().stream().findFirst().get();
+            var nextNode = edgeToNextEdge.get(currentNode);
+            while (!nodesInFace.contains(nextNode)) {
+                nodesInFace.add(currentNode);
+                currentNode = nextNode;
+                nextNode = edgeToNextEdge.get(currentNode);
+            }
+            nodesInFace.add(currentNode);
+
             DoublyLinkedList<DCEL.Node<V, E>> face = new DoublyLinkedList<>();
             nodesInFace.forEach(face::addLast);
             faces.add(new DCEL.Face<>(face));

@@ -11,6 +11,10 @@ public class DCEL<V, E> {
         this.faces = faces;
     }
 
+    public List<Face<V, E>> getFaces() {
+        return faces;
+    }
+
     public static final class Face<V, E> {
         private final DoublyLinkedList<Node<V, E>> edges;
 
@@ -29,35 +33,6 @@ public class DCEL<V, E> {
         }
     }
 
-    public static final class Node<V, E> {
-        private final V v;
-        private final V target;
-        private final E edge;
-
-        public Node(V v, V target, E edge) {
-            this.v = v;
-            this.target = target;
-            this.edge = edge;
-        }
-
-        public V v() {
-            return v;
-        }
-
-        public V target() {
-            return target;
-        }
-
-        public E edge() {
-            return edge;
-        }
-
-        @Override
-        public String toString() {
-            return "Node[" +
-                    "v=" + v + ", " +
-                    "target=" + target + ", " +
-                    "edge=" + edge + ']';
-        }
+    public record Node<V, E>(V v, V target, E edge) {
     }
 }

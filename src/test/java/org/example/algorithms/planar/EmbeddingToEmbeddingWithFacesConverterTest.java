@@ -9,9 +9,7 @@ import org.jgrapht.graph.SimpleGraph;
 import org.jgrapht.util.SupplierUtil;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-class EmbeddingToDCELConverterTest {
+class EmbeddingToEmbeddingWithFacesConverterTest {
 
     @Test
     void shouldConvertK4() {
@@ -21,7 +19,7 @@ class EmbeddingToDCELConverterTest {
         completeGenerator.generateGraph(completeGraph);
 
         var embedding = new BoyerMyrvoldPlanarityInspector<>(completeGraph).getEmbedding();
-        var dcel = EmbeddingToDCELConverter.convert(embedding);
+        var dcel = EmbeddingToEmbeddingWithFacesConverter.convert(embedding);
 
         assert dcel.getFaces().size() == 4;
     }
@@ -34,10 +32,10 @@ class EmbeddingToDCELConverterTest {
         cycleGenerator.generateGraph(cycle);
 
         var embedding = new BoyerMyrvoldPlanarityInspector<>(cycle).getEmbedding();
-        var dcel = EmbeddingToDCELConverter.convert(embedding);
+        var embeddingWithFaces = EmbeddingToEmbeddingWithFacesConverter.convert(embedding);
 
-        assert dcel.getFaces().size() == 2;
-        assert dcel.getFaces().get(0).edges().size() == 10;
-        assert dcel.getFaces().get(1).edges().size() == 10;
+        assert embeddingWithFaces.getFaces().size() == 2;
+        assert embeddingWithFaces.getFaces().get(0).edges().size() == 10;
+        assert embeddingWithFaces.getFaces().get(1).edges().size() == 10;
     }
 }

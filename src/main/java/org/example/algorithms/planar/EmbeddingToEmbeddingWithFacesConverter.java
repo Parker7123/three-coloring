@@ -15,38 +15,38 @@ import java.util.*;
  * </a>
  */
 
-public class EmbeddingToDCELConverter {
+public class EmbeddingToEmbeddingWithFacesConverter {
 
-    public static <V, E> DCEL<V, E> buildDcelFromGraph(Graph<V, E> graph) {
+    public static <V, E> EmbeddingWithFaces<V, E> buildEmbeddingFromGraph(Graph<V, E> graph) {
         var embedding = new BoyerMyrvoldPlanarityInspector<>(graph).getEmbedding();
         return convert(embedding);
     }
 
-    public static <V, E> DCEL<V, E> convert(PlanarityTestingAlgorithm.Embedding<V, E> embedding) {
-        List<DCEL.Face<V, E>> faces = new ArrayList<>();
+    public static <V, E> EmbeddingWithFaces<V, E> convert(PlanarityTestingAlgorithm.Embedding<V, E> embedding) {
+        List<EmbeddingWithFaces.Face<V, E>> faces = new ArrayList<>();
         Graph<V, E> graph = embedding.getGraph();
-        Map<DCEL.Node<V, E>, DCEL.Node<V, E>> edgeToNextEdge = new HashMap<>();
+        Map<EmbeddingWithFaces.Node<V, E>, EmbeddingWithFaces.Node<V, E>> edgeToNextEdge = new HashMap<>();
         for (V v : graph.vertexSet()) {
             List<E> edgesAroundV = embedding.getEdgesAround(v);
-            DCEL.Node<V, E> firstNode = null;
-            DCEL.Node<V, E> prevnode = null;
+            EmbeddingWithFaces.Node<V, E> firstNode = null;
+            EmbeddingWithFaces.Node<V, E> prevnode = null;
             for (E edge : edgesAroundV) {
                 V oppositeVertex = Graphs.getOppositeVertex(graph, edge, v);
                 if (prevnode == null) {
-                    prevnode = new DCEL.Node<>(oppositeVertex, v, edge);
+                    prevnode = new EmbeddingWithFaces.Node<>(oppositeVertex, v, edge);
                     firstNode = prevnode;
                 } else {
-                    DCEL.Node<V, E> node = new DCEL.Node<>(v, oppositeVertex, edge);
+                    EmbeddingWithFaces.Node<V, E> node = new EmbeddingWithFaces.Node<>(v, oppositeVertex, edge);
                     edgeToNextEdge.put(prevnode, node);
-                    prevnode = new DCEL.Node<>(oppositeVertex, v, edge);
+                    prevnode = new EmbeddingWithFaces.Node<>(oppositeVertex, v, edge);
                 }
             }
             if (firstNode != prevnode) {
-                edgeToNextEdge.put(prevnode, new DCEL.Node<>(firstNode.target(), firstNode.v(), firstNode.edge()));
+                edgeToNextEdge.put(prevnode, new EmbeddingWithFaces.Node<>(firstNode.target(), firstNode.v(), firstNode.edge()));
             }
         }
         while (!edgeToNextEdge.isEmpty()) {
-            var nodesInFace = new LinkedHashSet<DCEL.Node<V,E>>();
+            var nodesInFace = new LinkedHashSet<EmbeddingWithFaces.Node<V,E>>();
             var currentNode = edgeToNextEdge.keySet().stream().findFirst().get();
             var nextNode = edgeToNextEdge.get(currentNode);
             while (!nodesInFace.contains(nextNode)) {
@@ -56,11 +56,11 @@ public class EmbeddingToDCELConverter {
             }
             nodesInFace.add(currentNode);
 
-            DoublyLinkedList<DCEL.Node<V, E>> face = new DoublyLinkedList<>();
+            DoublyLinkedList<EmbeddingWithFaces.Node<V, E>> face = new DoublyLinkedList<>();
             nodesInFace.forEach(face::addLast);
-            faces.add(new DCEL.Face<>(face));
+            faces.add(new EmbeddingWithFaces.Face<>(face));
             nodesInFace.forEach(edgeToNextEdge::remove);
         }
-        return new DCEL<>(faces, graph);
+        return new EmbeddingWithFaces<>(faces, graph);
     }
 }

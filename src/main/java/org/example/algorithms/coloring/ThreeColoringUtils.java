@@ -19,10 +19,9 @@ public class ThreeColoringUtils {
         return new ColoringImpl<>(Map.of(), NUMBER_OF_COLORS);
     }
 
-    public static <V, E> Set<V> vertexSetNeighbors(Graph<V, E> graph, Set<V> vertices) {
-        return vertices.stream().flatMap(vertex -> graph.edgesOf(vertex).stream()
-                        .map(edge -> Graphs.getOppositeVertex(graph, edge, vertex)))
-                .filter(v -> !vertices.contains(v))
+    public static <V, E> Set<V> vertexNeighbors(Graph<V, E> graph, V vertex) {
+        return graph.edgesOf(vertex).stream()
+                        .map(edge -> Graphs.getOppositeVertex(graph, edge, vertex))
                 .collect(toSet());
     }
 

@@ -5,11 +5,11 @@ import org.jgrapht.util.DoublyLinkedList;
 
 import java.util.List;
 
-public class DCEL<V, E> {
+public class EmbeddingWithFaces<V, E> {
     private final List<Face<V, E>> faces;
     private final Graph<V, E> graph;
 
-    public DCEL(List<Face<V, E>> faces, Graph<V, E> graph) {
+    public EmbeddingWithFaces(List<Face<V, E>> faces, Graph<V, E> graph) {
         this.faces = faces;
         this.graph = graph;
     }

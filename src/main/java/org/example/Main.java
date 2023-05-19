@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.algorithms.coloring.PlanarThreeColoring;
+import org.example.algorithms.separator.PlanarConnectedSeparatorFindingAlgorithm;
 import org.jgrapht.Graph;
 import org.jgrapht.generate.CompleteGraphGenerator;
 import org.jgrapht.graph.DefaultEdge;
@@ -30,6 +31,9 @@ public class Main {
         // example k4
         var integerDefaultEdgePlanarThreeColoring = new PlanarThreeColoring<>(completeGraph).getColoring();
         System.out.println(integerDefaultEdgePlanarThreeColoring);
+
+        PlanarConnectedSeparatorFindingAlgorithm<String, DefaultEdge> P = new PlanarConnectedSeparatorFindingAlgorithm<>(createStringGraph());
+        P.runAlgorithm();
     }
 
     private static Graph<String, DefaultEdge> createStringGraph()

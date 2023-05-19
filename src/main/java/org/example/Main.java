@@ -32,8 +32,6 @@ public class Main {
         var integerDefaultEdgePlanarThreeColoring = new PlanarThreeColoring<>(completeGraph).getColoring();
         System.out.println(integerDefaultEdgePlanarThreeColoring);
 
-        PlanarConnectedSeparatorFindingAlgorithm<String, DefaultEdge> P = new PlanarConnectedSeparatorFindingAlgorithm<>(createStringGraph());
-        P.runAlgorithm();
     }
 
     private static Graph<String, DefaultEdge> createStringGraph()

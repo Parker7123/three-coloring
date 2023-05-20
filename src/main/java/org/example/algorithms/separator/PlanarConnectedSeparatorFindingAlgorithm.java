@@ -1,6 +1,8 @@
 package org.example.algorithms.separator;
 
+import org.example.algorithms.planar.PlanarTriangulationAlgorithm;
 import org.jgrapht.Graph;
+import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
 import org.jgrapht.graph.SimpleGraph;
 
 import java.util.Set;
@@ -35,11 +37,13 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     public void runAlgorithm() {
 
         // 1 - Simple Stage
-        Graph<V,E> ModifiedGraph = simpleStage();
-        if(ModifiedGraph==null)return;
+        Graph<V,E> modifiedGraph = simpleStage();
+        if(modifiedGraph==null) return;
+
+        var embedding = new BoyerMyrvoldPlanarityInspector<>(modifiedGraph).getEmbedding();
         
         // 2
-        // triangulacja triangulate()
+        var triangulatedFaces = new PlanarTriangulationAlgorithm<>(embedding);
 
         // 3
         // całe szukanie cyklu

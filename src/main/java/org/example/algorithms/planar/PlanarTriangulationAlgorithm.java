@@ -6,6 +6,7 @@ import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.*;
 import static org.example.algorithms.coloring.ThreeColoringUtils.vertexNeighbors;
@@ -52,32 +53,41 @@ public class PlanarTriangulationAlgorithm<V, E> {
         for (V vertex : vertexToFaces.keySet()) {
             Set<V> vertexNeighbors = vertexNeighbors(sourceGraph, vertex);
             for (var face : vertexToFaces.get(vertex)) {
-                face.edges().stream()
+                var neighborsOnTheCycle = face.edges().stream()
                         .skip(1)
-                        .limit(face.edges().size() - 3)
-                        .map(node -> node.target())
-                        // O(1) FastLookupGraphSpecificStrategy
-                        .filter(v -> !sourceGraph.containsEdge(v, vertex) && !sourceGraph.containsEdge(vertex, v))
-                        // O(1)
-                        .forEach(v -> sourceGraph.addEdge(vertex, v));
-
-                // Not finished more optimal solution if checking edge is not O(1), but it should be O(1)
-                // check FastLookupGraphSpecificStrategy
-//                var neighborOnTheCycle = face.edges().stream()
-//                        .skip(1)
-//                        .limit(face.edges().size() - 3)
-//                        .map(node -> vertexNeighbors.contains(node.target()))
-//                        .findFirst();
-//                if (neighborOnTheCycle.isPresent()) {
-//                    // bi-star triangulation
-//                } else {
-//                    // no risk of double edges star triangulation
-//                    face.edges().stream()
-//                            .skip(1)
-//                            .limit(face.edges().size() - 3)
-//                            .map(node -> node.target())
-//                            .forEach(v -> sourceGraph.addEdge(vertex, v));
-//                }
+                        .dropWhile(node -> !vertexNeighbors.contains(node.target()))
+                        .limit(2)
+                        .toList();
+                if (!neighborsOnTheCycle.get(1).target().equals(vertex)) {
+                    var neighbor = neighborsOnTheCycle.get(0);
+                    var nneighbor = neighborsOnTheCycle.get(1);
+                    var e1 = face.edges().stream().findFirst().orElseThrow();
+                    // bi-star triangulation
+                    face.edges().stream()
+                            .skip(1)
+                            .takeWhile(node -> !node.equals(neighbor))
+                            .map(EmbeddingWithFaces.Node::target)
+                            .forEach(v -> {
+                                sourceGraph.addEdge(nneighbor.target(), v);
+                            });
+                    face.edges().stream()
+                            .dropWhile(node -> !node.equals(neighbor))
+                            .map(EmbeddingWithFaces.Node::target)
+                            .forEach(v -> {
+                                if (!v.equals(e1.v()) && !v.equals(neighbor.target())) {
+                                    sourceGraph.addEdge(v, e1.target());
+                                }
+                            });
+                } else {
+                    // no risk of double edges star triangulation
+                    face.edges().stream()
+                            .skip(1)
+                            .limit(face.edges().size() - 3)
+                            .map(EmbeddingWithFaces.Node::target)
+                            .forEach(v -> {
+                                sourceGraph.addEdge(vertex, v);
+                            });
+                }
             }
         }
         return EmbeddingToEmbeddingWithFacesConverter.buildEmbeddingFromGraph(sourceGraph);

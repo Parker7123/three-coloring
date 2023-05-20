@@ -16,13 +16,14 @@ class PlanarTriangulationAlgorithmTest {
     void shouldTriangulateCycle() {
         Graph<Integer, DefaultEdge> cycle = new SimpleGraph<>(SupplierUtil.createIntegerSupplier(),
                 SupplierUtil.createDefaultEdgeSupplier(), false);
-        var cycleGenerator = new RingGraphGenerator<Integer, DefaultEdge>(10);
+        var cycleGenerator = new RingGraphGenerator<Integer, DefaultEdge>(5);
         cycleGenerator.generateGraph(cycle);
 
         var embedding = new BoyerMyrvoldPlanarityInspector<>(cycle).getEmbedding();
         var embeddingWithFaces = new PlanarTriangulationAlgorithm<>(embedding).triangulate();
-
-        assert embeddingWithFaces.getFaces().size() == 8;
+        System.out.println(embeddingWithFaces.getGraph().edgeSet().size());
+        assert embeddingWithFaces.getGraph().edgeSet().size() == 3 * 5 - 6;
+        assert embeddingWithFaces.getFaces().size() == 6;
         for (var face : embeddingWithFaces.getFaces()) {
             assert face.edges().size() == 3;
         }

@@ -26,5 +26,5 @@ test {
 }
 
 application {
-    mainClassName = 'org.example.Main'
+    getMainClass().set('org.example.Main')
 }

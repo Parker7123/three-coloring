@@ -6,7 +6,6 @@ import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.*;
 import static org.example.algorithms.coloring.ThreeColoringUtils.vertexNeighbors;
@@ -25,6 +24,11 @@ public class PlanarTriangulationAlgorithm<V, E> {
 
     public PlanarTriangulationAlgorithm(PlanarityTestingAlgorithm.Embedding<V, E> embedding) {
         this.embedding = EmbeddingToEmbeddingWithFacesConverter.convert(embedding);
+        this.sourceGraph = embedding.getGraph();
+    }
+
+    public PlanarTriangulationAlgorithm(EmbeddingWithFaces<V, E> embedding) {
+        this.embedding = embedding;
         this.sourceGraph = embedding.getGraph();
     }
 

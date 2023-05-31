@@ -1,5 +1,6 @@
 package org.example.algorithms.separator;
 
+import com.google.common.graph.Graphs;
 import org.example.algorithms.planar.PlanarTriangulationAlgorithm;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
@@ -40,10 +41,9 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         Graph<V,E> modifiedGraph = simpleStage();
         if(modifiedGraph==null) return;
 
-        var embedding = new BoyerMyrvoldPlanarityInspector<>(modifiedGraph).getEmbedding();
-        
         // 2
-        var triangulatedFaces = new PlanarTriangulationAlgorithm<>(embedding);
+        var embedding = new BoyerMyrvoldPlanarityInspector<>(modifiedGraph).getEmbedding();
+        var triangulatedFaces = new PlanarTriangulationAlgorithm<>(embedding).triangulate();
 
         // 3
         // całe szukanie cyklu
@@ -253,9 +253,5 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         subsetA = new HashSet<>();
         subsetB = new HashSet<>();
         separator = new HashSet<>();
-    }
-    private Graph<V, E> triangulate() {
-        // tutaj dodać algorytm triangulacji, najlepiej w nowej klasie
-        return null;
     }
 }

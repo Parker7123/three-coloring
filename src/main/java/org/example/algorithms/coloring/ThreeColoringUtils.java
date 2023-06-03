@@ -4,6 +4,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.alg.interfaces.VertexColoringAlgorithm.Coloring;
 import org.jgrapht.alg.interfaces.VertexColoringAlgorithm.ColoringImpl;
+import org.jgrapht.graph.SimpleGraph;
 
 import java.util.Map;
 import java.util.Set;
@@ -36,5 +37,20 @@ public class ThreeColoringUtils {
 
     public static<V, E> Map<V, E> toImmutableMap(Map<V, E> map) {
         return map.entrySet().stream().collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static <V, E> Graph<V, E> subgraph(Graph<V, E> graph, Set<V> subgraphVertices) {
+        if (graph.edgeSet().isEmpty()) {
+            return graph;
+        }
+        Graph<V, E> subgraph = new SimpleGraph<>(null, graph.getEdgeSupplier(), false);
+        Graphs.addAllVertices(subgraph, subgraphVertices);
+        Set<E> inducedEdges = graph.edgeSet().stream()
+                .filter(e -> subgraphVertices.contains(graph.getEdgeSource(e)) &&
+                        subgraphVertices.contains(graph.getEdgeTarget(e)))
+                .collect(toSet());
+        Graphs.addAllEdges(subgraph, graph, inducedEdges);
+
+        return subgraph;
     }
 }

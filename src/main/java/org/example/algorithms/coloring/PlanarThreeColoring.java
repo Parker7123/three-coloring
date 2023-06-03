@@ -1,13 +1,11 @@
 package org.example.algorithms.coloring;
 
-import com.google.common.collect.Maps;
 import org.example.algorithms.separator.SeparatorFindingAlgorithm;
 import org.example.algorithms.separator.SimpleSeparatorFindingAlgorithm;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
 import org.jgrapht.alg.interfaces.VertexColoringAlgorithm;
 import org.jgrapht.alg.util.Pair;
-import org.jgrapht.graph.AsSubgraph;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,7 +13,8 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.*;
-import static org.example.algorithms.coloring.ThreeColoringUtils.*;
+import static org.example.algorithms.coloring.ThreeColoringUtils.subgraph;
+import static org.example.algorithms.coloring.ThreeColoringUtils.sumOfColorings;
 
 public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
 
@@ -41,10 +40,7 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         Set<V> separator = separatorFindingAlgorithm.getSparator();
         Set<V> subsetA = separatorFindingAlgorithm.getSubsetA();
         Set<V> subsetB = separatorFindingAlgorithm.getSubsetB();
-        // TODO: AsSubgraph is not so optimal, replace with creating separate grap
-        Graph<V, E> graphInducedBySeparator = new AsSubgraph<>(graph, separator);
-        Graph<V, E> graphInducedBySubsetA = new AsSubgraph<>(graph, subsetA);
-        Graph<V, E> graphInducedBySubsetB = new AsSubgraph<>(graph, subsetB);
+        Graph<V, E> graphInducedBySeparator = subgraph(graph, separator);
 
         var threeColoringAlgorithm = new ThreeColoringForGraphAndColoredNeighbors<>(graphInducedBySeparator,
                 unmodifiableMap(restrictedColors));
@@ -52,6 +48,8 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         if (validSeparatorColorings.isEmpty()) {
             return null;
         }
+        Graph<V, E> graphInducedBySubsetA = subgraph(graph, subsetA);
+        Graph<V, E> graphInducedBySubsetB = subgraph(graph, subsetB);
         for (Coloring<V> separatorColoring : validSeparatorColorings) {
             var currentlyRestrictedColors = generateRestrictedColors(separatorColoring);
             var mergedRestrictedColors = mergeRestrictedColors(restrictedColors, currentlyRestrictedColors);

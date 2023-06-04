@@ -74,20 +74,28 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         List<V> cycle = getCycle(v1,v2,commonAncestor);
         Map<E, Integer> outgoingEdgesWeights = computeOutgoingEdgeWeights(spanningTree, v1, v2, commonAncestor, cycle);
 
-        Pair<Integer,Integer> areaAndCycleValue = SumCycleSides(spanningTree,cycle,embedding,outgoingEdgesWeights);
-        int area = areaAndCycleValue.getFirst();
-        int cycleValue = areaAndCycleValue.getSecond();
+        Pair<Integer,Integer> cycleValues = SumCycleSides(spanningTree,cycle,embedding,outgoingEdgesWeights);
+        int area, cycleValue;
+        if(cycleValues.getFirst() > cycleValues.getSecond()){
+            area = 1;
+            cycleValue = cycleValues.getFirst();
+        }
+        else{
+            area = 2;
+            cycleValue = cycleValues.getSecond();
+        }
     }
 
     private void findSufficientCycle(Graph<V,E> G, Graph<V,E> spanningTree, List<V> cycle,
                                      int area, int cycleValue, E cycleEdge,
                                      PlanarityTestingAlgorithm.Embedding embedding,
-                                     EmbeddingWithFaces<V,E> triangulatedFaces) throws Exception {
+                                     EmbeddingWithFaces<V,E> triangulatedFaces,
+                                     Map<E,Integer> outgoingEdgesWeights) throws Exception {
         int currentCycleValue = cycleValue;
         E currentCycleEdge = cycleEdge;
         while(currentCycleValue > 2/3*n){
-            List<E> edgesInArea = findTriangleEdgesInArea(G,cycle,area,cycleEdge,embedding,triangulatedFaces);
-            V commonVertex = commonVertex(G,edgesInArea.get(0), edgesInArea.get(1));
+            List<E> edgesInArea = findTriangleEdgesInArea(G,cycle,area,currentCycleEdge,embedding,triangulatedFaces);
+            V vertexY = commonVertex(G, edgesInArea.get(0), edgesInArea.get(1));
 
             //TODO Find a faster way to check if edge is in the spanning tree
             var edgesInAreaFromSpanningTree = edgesInArea.stream().
@@ -95,17 +103,52 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
             switch (edgesInAreaFromSpanningTree.size()){
                 case 0:
-                    // TODO second case in step 9 - what if none of triangle edges is in spanning tree
+                    findClosestVertexOnCycleAndUpdateWeights(spanningTree, cycle, vertexY);
+                    V vertexX = cycle.get(0);
+                    V vertexZ = cycle.get(cycle.size()-1);
+                    V commonAncestorXY = getLowestCommonAncestor(vertexY, vertexX);
+                    V commonAncestorYZ = getLowestCommonAncestor(vertexY, vertexZ);
+
+                    var cycle1 = getCycle(vertexX, vertexY, commonAncestorXY);
+                    var cycle2 = getCycle(vertexY, vertexZ, commonAncestorYZ);
+                    int cycle1Value, cycle2Value;
+                    var cycle1Values = SumCycleSides(spanningTree, cycle1, embedding, outgoingEdgesWeights);
+                    // TODO You don't have to count cycle2Values manually
+                    var cycle2Values = SumCycleSides(spanningTree, cycle2, embedding, outgoingEdgesWeights);
+                    if(area==1){
+                        cycle1Value = cycle1Values.getFirst();
+                        cycle2Value = cycle2Values.getFirst();
+                    }
+                    else{
+                        cycle1Value = cycle1Values.getSecond();
+                        cycle2Value = cycle2Values.getSecond();
+                    }
+                    if(cycle1Value>cycle2Value){
+                        cycle = cycle1;
+                        currentCycleValue = cycle1Value;
+                        currentCycleEdge = G.getEdge(vertexX,vertexY);
+                    }
+                    else{
+                        cycle = cycle2;
+                        currentCycleValue = cycle2Value;
+                        currentCycleEdge = G.getEdge(vertexY, vertexZ);
+                    }
                     break;
                 case 1:
                     //TODO (?) Count subtrees for y (Figure 4.3b))
                     V vertex1InArea = G.getEdgeSource(edgesInAreaFromSpanningTree.get(0));
                     V vertex2InArea = G.getEdgeTarget(edgesInAreaFromSpanningTree.get(0));
-
+                    V vertexInArea = vertex1InArea; // default assignment
                     for(int i=0; i<cycle.size(); i++){
                         V vertexFromCycle = cycle.get(i);
                         if(vertexFromCycle.equals(vertex1InArea)){
+                            cycle.add(i+1,vertex2InArea);
+                            vertexInArea = vertex2InArea;
+                            break;
+                        }
+                        else if(vertexFromCycle.equals(vertex2InArea)){
                             cycle.add(i+1,vertex1InArea);
+                            vertexInArea = vertex1InArea;
                             break;
                         }
                         else if(vertexFromCycle.equals(vertex2InArea)){
@@ -113,6 +156,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                         }
                     }
                     currentCycleValue--;
+                    getEdgesWeights(spanningTree, vertexInArea,
+                            spanningTreeParentNodes.get(vertexInArea), outgoingEdgesWeights);
                     break;
                 default:
                     throw new Exception("Error in findSufficientCycle: More than one edge lies inside the cycle");
@@ -120,6 +165,19 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
     }
 
+    private void findClosestVertexOnCycleAndUpdateWeights(Graph<V,E> spanningTree, List<V> cycle, V vertex){
+        V parent = spanningTreeParentNodes.get(vertex);
+
+        //TODO Better way to check if vertex is on cycle
+        do {
+            for(E edge: spanningTree.outgoingEdgesOf(vertex)) {
+                countSubtreeVerticesRecursive(spanningTree,
+                        Graphs.getOppositeVertex(spanningTree, edge, vertex), vertex);
+            }
+            vertex = parent;
+            parent = spanningTreeParentNodes.get(parent);
+        }while(!cycle.contains(vertex));
+    }
     private V commonVertex(Graph<V,E> G, E e1, E e2){
         V v1 = G.getEdgeSource(e1);
         V v2 = G.getEdgeTarget(e1);
@@ -264,7 +322,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
             }
         }
 
-        return new Pair<>(count1,count2);
+        return new Pair<>(count1, count2);
     }
 
     @VisibleForTesting
@@ -333,7 +391,6 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
         return count;
     }
-
 
     @VisibleForTesting
     List<V> getCycle(V v1, V v2, V commonAncestor){

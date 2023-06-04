@@ -71,27 +71,10 @@ public class OutgoingEdgesWeightsTest {
         assertThat(parentNodes.get(8)).isNull();
     }
 
-    private static Graph<Integer, DefaultEdge> createGraph() {
-        Graph<Integer, DefaultEdge> graph = new SimpleGraph<>(DefaultEdge.class);
-        IntStream.range(0, 11).forEach(graph::addVertex);
-        graph.addEdge(0, 1);
-        graph.addEdge(1, 2);
-        graph.addEdge(2, 3);
-        graph.addEdge(3, 4);
-        graph.addEdge(4, 5);
-        graph.addEdge(5, 0);
-
-        // 8 is root
-        graph.addEdge(6, 5);
-        graph.addEdge(8, 6);
-        graph.addEdge(6, 7);
-
-        graph.addEdge(1, 9);
-        graph.addEdge(2, 10);
-
-        return graph;
-    }
-
+    /**
+     * resources/testGraph.png without 3 - 4 edge
+     * @return
+     */
     private static Graph<Integer, DefaultEdge> createTreeGraph() {
         Graph<Integer, DefaultEdge> graph = new SimpleGraph<>(DefaultEdge.class);
         IntStream.range(0, 11).forEach(graph::addVertex);

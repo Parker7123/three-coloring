@@ -1,59 +1,65 @@
 package org.example;
 
+import org.checkerframework.checker.units.qual.A;
 import org.example.algorithms.coloring.PlanarThreeColoring;
 import org.example.algorithms.separator.PlanarConnectedSeparatorFindingAlgorithm;
 import org.jgrapht.Graph;
+import org.jgrapht.alg.interfaces.VertexColoringAlgorithm;
+import org.jgrapht.alg.interfaces.VertexColoringAlgorithm.Coloring;
 import org.jgrapht.generate.CompleteGraphGenerator;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
+import org.jgrapht.nio.graph6.Graph6Sparse6Importer;
 import org.jgrapht.util.SupplierUtil;
+import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.io.StringReader;
+import java.util.Optional;
+import java.util.concurrent.Callable;
 
 public class Main {
-    private static int SIZE = 4;
 
-    public static void main(String[] args) {
-        // TODO: Use https://picocli.info to create console app that loads graph from file
-        System.out.println("Hello world!");
-        Graph<String, DefaultEdge> stringGraph = createStringGraph();
-        System.out.println("-- toString output");
-        System.out.println(stringGraph);
-        System.out.println();
+    @Command(name = "threeColoring", mixinStandardHelpOptions = true, version = "1.0",
+            description = "Checks if given planar graph can be three colored and returns the coloring if possible")
+    private static class ThreeColoringCommand implements Callable<File> {
 
-        // example cicle
-        var planarThreeColoring = new PlanarThreeColoring<>(stringGraph).getColoring();
-        System.out.println(planarThreeColoring);
+        @ArgGroup(exclusive = true)
+        private Args args;
 
-        Graph<Integer, DefaultEdge> completeGraph = new SimpleGraph<>(SupplierUtil.createIntegerSupplier(),
-                SupplierUtil.createDefaultEdgeSupplier(), false);
-        CompleteGraphGenerator<Integer, DefaultEdge> completeGenerator = new CompleteGraphGenerator<>(SIZE);
-        completeGenerator.generateGraph(completeGraph);
+        static class Args {
+            @Option(names = {"-f"}, paramLabel = "File", description = "File with graph in graph6 format")
+            private File file;
 
-        // example k4
-        var integerDefaultEdgePlanarThreeColoring = new PlanarThreeColoring<>(completeGraph).getColoring();
-        System.out.println(integerDefaultEdgePlanarThreeColoring);
+            @Parameters(arity = "0..1", description = "graph6 string")
+            private String graphCode;
+        }
 
+        @Override
+        public File call() throws Exception {
+            Graph<Integer, DefaultEdge> graph = new SimpleGraph<>(SupplierUtil.createIntegerSupplier(),
+                    SupplierUtil.createDefaultEdgeSupplier(), false);
+            Graph6Sparse6Importer<Integer, DefaultEdge> importer = new Graph6Sparse6Importer<>();
+            if (args.file != null) {
+                importer.importGraph(graph, args.file);
+            } else {
+                importer.importGraph(graph, new StringReader(args.graphCode));
+            }
+            Coloring<Integer> threeColoring = new PlanarThreeColoring<>(graph).getColoring();
+            if (threeColoring == null) {
+                System.err.println("Three coloring is not possible on a given graph");
+            } else {
+                System.out.println(threeColoring);
+            }
+            return null;
+        }
     }
 
-    private static Graph<String, DefaultEdge> createStringGraph()
-    {
-        Graph<String, DefaultEdge> g = new SimpleGraph<>(DefaultEdge.class);
-        String v1 = "v1";
-        String v2 = "v2";
-        String v3 = "v3";
-        String v4 = "v4";
-
-        // add the vertices
-        g.addVertex(v1);
-        g.addVertex(v2);
-        g.addVertex(v3);
-        g.addVertex(v4);
-
-        // add edges to create a circuit
-        g.addEdge(v1, v2);
-        g.addEdge(v2, v3);
-        g.addEdge(v3, v4);
-        g.addEdge(v4, v1);
-
-        return g;
+    public static void main(String[] args) {
+        new CommandLine(new ThreeColoringCommand()).execute(args);
     }
 }

@@ -5,7 +5,6 @@ import org.jgrapht.Graph;
 import org.jgrapht.alg.connectivity.ConnectivityInspector;
 import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
 import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
-import org.jgrapht.graph.AsSubgraph;
 
 import java.util.Comparator;
 import java.util.List;
@@ -13,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
+import static org.example.algorithms.coloring.ThreeColoringUtils.subgraph;
 
 public class PlanarSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAlgorithm<V>{
 
@@ -80,7 +80,7 @@ public class PlanarSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAl
        Set<V> biggestComponent = connectedComponents.stream()
                 .max(Comparator.comparing(Set::size))
                 .orElseThrow();
-        Graph<V, E> biggestComponentGraph = new AsSubgraph<>(sourceGraph, biggestComponent);
+        Graph<V, E> biggestComponentGraph = subgraph(sourceGraph, biggestComponent);
 
         var connectedSeparatorAlg = new PlanarConnectedSeparatorFindingAlgorithm<>(biggestComponentGraph);
 

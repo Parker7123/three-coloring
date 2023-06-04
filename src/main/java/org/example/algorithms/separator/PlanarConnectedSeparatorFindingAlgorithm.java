@@ -22,6 +22,9 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     private Set<V> separator;
     private Set<V> subsetA;
     private Set<V> subsetB;
+    private List<List<V>> spanningTreeLevels;
+    private int level0;
+    private int level2;
 
     private Map<V,V> spanningTreeParentNodes;
 
@@ -88,6 +91,24 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
             area = 2;
             cycleValue = cycleValues.getSecond();
         }
+
+        try {
+            findSufficientCycle(G, spanningTree, cycle, area, cycleValue, cycleEdge,
+                    embedding, triangulatedFaces, outgoingEdgesWeights);
+        }
+        catch (Exception ex){
+
+        }
+
+        // TODO Step 10
+
+    }
+
+    private void CountSeparatorAndSubsets(List<V> cycle){
+//        separator.addAll(cycle);
+//        separator.addAll(spanningTreeLevels.get(level0));
+//        separator.addAll(spanningTreeLevels.get(level2));
+//        separator.
     }
 
     private void findSufficientCycle(Graph<V,E> G, Graph<V,E> spanningTree, List<V> cycle,
@@ -435,7 +456,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     }
 
     private Graph<V,E> simpleStage()    {
-        List<List<V>> treeLevels = createSpanningTreeLevelsUsingBFS(sourceGraph.vertexSet().stream().findFirst().orElse(null));
+        List<List<V>> treeLevels = spanningTreeLevels = createSpanningTreeLevelsUsingBFS(sourceGraph.vertexSet().stream().findFirst().orElse(null));
         Graph<V,E> spanningTree = createSpanningTreeUsingBFS(sourceGraph.vertexSet().stream().findFirst().orElse(null));
         int centerLevel = findTreeCenterOfGravityLevel(treeLevels);
 
@@ -453,6 +474,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
 
         modifyGraphForComplexStage(spanningTree,treeLevels,levelBelow,levelAbove);
+        this.level0 = levelBelow;
+        this.level2 = levelAbove;
         return spanningTree;
     }
     private List<List<V>> createSpanningTreeLevelsUsingBFS(V startVertex) {
@@ -467,11 +490,11 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
             while (!queue.isEmpty()) {
                 int size = queue.size();
                 List<V> levelVertices = new ArrayList<>();
-    
+
                 for (int i = 0; i < size; i++) {
                     V vertex = queue.poll();
                     levelVertices.add(vertex);
-    
+
                     for (E edge : sourceGraph.outgoingEdgesOf(vertex)) {
                         V neighbor = sourceGraph.getEdgeTarget(edge);
                         if (!visited.contains(neighbor)) {
@@ -480,10 +503,9 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                         }
                     }
                 }
-    
+
                 levels.add(levelVertices);
             }
-    
             return levels;
     }
 

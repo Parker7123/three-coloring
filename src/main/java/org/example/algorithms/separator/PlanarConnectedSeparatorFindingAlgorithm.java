@@ -1,5 +1,6 @@
 package org.example.algorithms.separator;
 
+import org.example.algorithms.planar.EmbeddingWithFaces;
 import org.example.algorithms.planar.PlanarTriangulationAlgorithm;
 import org.jgrapht.Graph;
 import org.jgrapht.Graphs;
@@ -9,7 +10,11 @@ import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.SimpleGraph;
 import org.jheaps.annotations.VisibleForTesting;
 
+import java.util.Set;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.example.algorithms.coloring.ThreeColoringUtils.subgraph;
 
 public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAlgorithm<V> {
     private final Graph<V, E> sourceGraph;
@@ -29,6 +34,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     public Set<V> getSparator() {
         return separator;
     }
+
     @Override
     public Set<V> getSubsetA() {
         return subsetA;
@@ -47,6 +53,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
         // 1 - Simple Stage
         Graph<V,E> modifiedGraph = simpleStage();
+        Graph<V,E> spanningTree = subgraph(modifiedGraph,modifiedGraph.vertexSet());
         if(modifiedGraph==null) return;
 
         // 2
@@ -55,7 +62,148 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
         // 3
         // całe szukanie cyklu
-        complexStage(modifiedGraph,embedding);
+        complexStage(modifiedGraph, spanningTree, embedding, triangulatedFaces);
+    }
+
+    private void complexStage(Graph<V,E> G, Graph<V,E> spanningTree,
+                              PlanarityTestingAlgorithm.Embedding embedding, EmbeddingWithFaces triangulatedFaces){
+        E cycleEdge = pickNontreeEdge(G);
+        V v1 = sourceGraph.getEdgeSource(cycleEdge);
+        V v2 = sourceGraph.getEdgeTarget(cycleEdge);
+        V commonAncestor = getLowestCommonAncestor(v1,v2);
+        List<V> cycle = getCycle(v1,v2,commonAncestor);
+        Map<E, Integer> outgoingEdgesWeights = computeOutgoingEdgeWeights(spanningTree, v1, v2, commonAncestor, cycle);
+
+        Pair<Integer,Integer> areaAndCycleValue = SumCycleSides(G,cycle,embedding,outgoingEdgesWeights);
+        int area = areaAndCycleValue.getFirst();
+        int cycleValue = areaAndCycleValue.getSecond();
+    }
+
+    private void findSufficientCycle(Graph<V,E> G, Graph<V,E> spanningTree, List<V> cycle,
+                                     int area, int cycleValue, E cycleEdge,
+                                     PlanarityTestingAlgorithm.Embedding embedding,
+                                     EmbeddingWithFaces<V,E> triangulatedFaces) throws Exception {
+        int currentCycleValue = cycleValue;
+        E currentCycleEdge = cycleEdge;
+        while(currentCycleValue > 2/3*n){
+            List<E> edgesInArea = findTriangleEdgesInArea(G,cycle,area,cycleEdge,embedding,triangulatedFaces);
+            V commonVertex = commonVertex(G,edgesInArea.get(0), edgesInArea.get(1));
+
+            //TODO Find a faster way to check if edge is in the spanning tree
+            var edgesInAreaFromSpanningTree = edgesInArea.stream().
+                    filter(e-> spanningTree.edgeSet().contains(e)).collect(Collectors.toList());
+
+            switch (edgesInAreaFromSpanningTree.size()){
+                case 0:
+                    // TODO second case in step 9 - what if none of triangle edges is in spanning tree
+                    break;
+                case 1:
+                    //TODO (?) Count subtrees for y (Figure 4.3b))
+                    V vertex1InArea = G.getEdgeSource(edgesInAreaFromSpanningTree.get(0));
+                    V vertex2InArea = G.getEdgeTarget(edgesInAreaFromSpanningTree.get(0));
+
+                    for(int i=0; i<cycle.size(); i++){
+                        V vertexFromCycle = cycle.get(i);
+                        if(vertexFromCycle.equals(vertex1InArea)){
+                            cycle.add(i+1,vertex1InArea);
+                            break;
+                        }
+                        else if(vertexFromCycle.equals(vertex2InArea)){
+                            cycle.add(i+1,vertex2InArea);
+                        }
+                    }
+                    currentCycleValue--;
+                    break;
+                default:
+                    throw new Exception("Error in findSufficientCycle: More than one edge lies inside the cycle");
+            }
+        }
+    }
+
+    private V commonVertex(Graph<V,E> G, E e1, E e2){
+        V v1 = G.getEdgeSource(e1);
+        V v2 = G.getEdgeTarget(e1);
+        if(v1.equals(G.getEdgeSource(e2)) || v1.equals(G.getEdgeTarget(e2))) {
+            return v1;
+        }
+        else if (v2.equals(G.getEdgeSource(e2)) || v2.equals(G.getEdgeTarget(e2))) {
+            return v2;
+        }
+        else {
+            return null;
+        }
+    }
+
+    private List<E> findTriangleEdgesInArea(Graph<V,E> G, List<V> cycle, int area, E cycleEdge,
+                               PlanarityTestingAlgorithm.Embedding embedding, EmbeddingWithFaces<V,E> triangulatedFaces){
+        var triangles = triangulatedFaces.getFaces().stream()
+                .filter(face -> face.edges().contains(cycleEdge)).collect(Collectors.toList());
+        V cycleEdgeSource = G.getEdgeSource(cycleEdge);
+        V cycleEdgeTarget = G.getEdgeTarget(cycleEdge);
+
+        List<E> edgesInArea = new ArrayList<>();
+        for(var face:triangles){
+            for(var edge:face.edges()){
+                if(checkIfEdgeInArea(G,cycle,area,embedding,edge.edge())){
+                    edgesInArea.add(edge.edge());
+                }
+            }
+        }
+        return edgesInArea;
+    }
+
+    private boolean checkIfEdgeInArea(Graph<V,E> G, List<V> cycle, int area,
+                                      PlanarityTestingAlgorithm.Embedding embedding, E edge){
+        V vertexOnCycle, vertexNotOnCycle;
+        if(cycle.contains(G.getEdgeSource(edge)) && cycle.contains(G.getEdgeTarget(edge))) {
+            return false;
+        }
+        else if(cycle.contains(G.getEdgeSource(edge))){
+            vertexOnCycle = G.getEdgeSource(edge);
+            vertexNotOnCycle = G.getEdgeTarget(edge);
+        }
+        else if (cycle.contains(G.getEdgeTarget(edge))){
+            vertexNotOnCycle = G.getEdgeSource(edge);
+            vertexOnCycle = G.getEdgeTarget(edge);
+        }
+        else{
+            return false; // TODO What if cycle has no common vertex with edge
+        }
+
+        int vertexOnCycleIndex = cycle.indexOf(vertexOnCycle);
+        int nextIndex = Math.floorMod(vertexOnCycleIndex+1,cycle.size());
+        V nextV  = cycle.get(nextIndex);
+        int prevIndex = Math.floorMod(vertexOnCycleIndex-1,cycle.size());
+        V prevV  = cycle.get(prevIndex);
+
+        List<E> outEdges = embedding.getEdgesAround(vertexOnCycle);
+        int prevEdgeIndex=0, nextEdgeIndex=0;
+        for (int j=0;j<outEdges.size();j++){
+            V v2 = G.getEdgeTarget(outEdges.get(vertexOnCycleIndex));
+            if(v2.equals(prevV))prevEdgeIndex=j;
+            if(v2.equals(nextV))nextEdgeIndex=j;
+        }
+
+        int currentArea = 0;
+        for(int j=0;j<outEdges.size();j++) {
+            if(j==prevEdgeIndex) {
+                currentArea = 1;
+                continue;
+            }
+            else if(j==nextEdgeIndex) {
+                currentArea = 2;
+                continue;
+            }
+            if(outEdges.get(j).equals(edge)) {
+                return currentArea == area;
+            }
+        }
+        for(int j=0;j<outEdges.size();j++){
+            if(outEdges.get(j).equals(edge)) {
+                return currentArea == area;
+            }
+        }
+        return false;
     }
 
     private Pair<Integer, Integer> SumCycleSides(Graph<V,E> G, List<V> cycle,
@@ -76,35 +224,35 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                 if(v2.equals(nextV))nextEdgeIndex=j;
             }
 
-            int area = 0;
+            int currentArea = 0;
 
-           for(int j=0;j<outEdges.size();j++) {
+            for(int j=0;j<outEdges.size();j++) {
 
-               if(j==prevEdgeIndex) {
-                   area = 1;
-                   continue;
-               }
-               else if(j==nextEdgeIndex) {
-                   area = 2;
-                   continue;
-               }
+                if(j==prevEdgeIndex) {
+                    currentArea = 1;
+                    continue;
+                }
+                else if(j==nextEdgeIndex) {
+                    currentArea = 2;
+                    continue;
+                }
 
-               if(area==1) {
-                   count1 += outgoingEdgesWeights.get(outEdges.get(j));
-               }
-               else if(area==2) {
-                   count2 += outgoingEdgesWeights.get(outEdges.get(j));
-               }
-           }
+                if(currentArea ==1) {
+                    count1 += outgoingEdgesWeights.get(outEdges.get(j));
+                }
+                else if(currentArea ==2) {
+                    count2 += outgoingEdgesWeights.get(outEdges.get(j));
+                }
+            }
 
             for(int j=0;j<outEdges.size();j++){
                 if(j==prevEdgeIndex || j==nextEdgeIndex) {
                     break;
                 }
-                if(area==1) {
+                if(currentArea ==1) {
                     count1 += outgoingEdgesWeights.get(outEdges.get(j));
                 }
-                else if(area==2) {
+                else if(currentArea ==2) {
                     count2 += outgoingEdgesWeights.get(outEdges.get(j));
                 }
             }
@@ -128,20 +276,6 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         return outgoingEdgesWeights;
     }
 
-    private void complexStage(Graph<V,E> G, PlanarityTestingAlgorithm.Embedding embedding){
-        E cycleEdge = pickNontreeEdge(G);
-        V v1 = sourceGraph.getEdgeSource(cycleEdge);
-        V v2 = sourceGraph.getEdgeTarget(cycleEdge);
-        V commonAncestor = getLowestCommonAncestor(v1,v2);
-        List<V> cycle = getCycle(v1,v2,commonAncestor);
-
-        Map<E, Integer> outgoingEdgesWeights = computeOutgoingEdgeWeights(G, v1, v2, commonAncestor, cycle);
-
-        Pair<Integer,Integer> areaAndCycleValue = SumCycleSides(G,cycle,embedding,outgoingEdgesWeights);
-        int area = areaAndCycleValue.getFirst();
-        int CycleValue = areaAndCycleValue.getSecond();
-    }
-
     private void getEdgesWeightsForCommonAncestor(Graph<V,E> G, V v1, List<V> cycle,Map<E,Integer> edgesWeights){
 
         int v1Index = cycle.indexOf(v1);
@@ -156,8 +290,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         V vPrev = cycle.get(vPrevIndex);
 
         for(E e : G.outgoingEdgesOf(v1)){
-            V v2 = G.getEdgeTarget(e);
-            if(v2.equals(vNext)||v2.equals(vPrev))continue;
+            V v2 = Graphs.getOppositeVertex(G, e, v1);
+            if(v2.equals(vNext)||v2.equals(vPrev)) continue;
             int count = countSubtreeVerticesRecursive(G,v2,v1);
             edgesWeights.put(e, count);
         }
@@ -188,10 +322,11 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
     private int countSubtreeVerticesRecursive(Graph<V, E> G, V vertex, V parent) {
         int count = 1;
-
         for (E edge : G.outgoingEdgesOf(vertex)) {
-            V v = Graphs.getOppositeVertex(G,edge, parent);
-            if(v.equals(parent))break;
+            V v = Graphs.getOppositeVertex(G,edge, vertex);
+            if(v.equals(parent)) {
+                continue;
+            }
             count += countSubtreeVerticesRecursive(G, v,vertex);
         }
 
@@ -309,6 +444,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         Queue<V> queue = new LinkedList<>();
         Set<V> visited = new HashSet<>();
         Map<V,V> parentNodes = new HashMap<>();
+
         parentNodes.put(startVertex,null);
         spanningTree.addVertex(startVertex);
         queue.add(startVertex);

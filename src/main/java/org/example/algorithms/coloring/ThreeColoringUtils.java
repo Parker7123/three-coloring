@@ -40,9 +40,6 @@ public class ThreeColoringUtils {
     }
 
     public static <V, E> Graph<V, E> subgraph(Graph<V, E> graph, Set<V> subgraphVertices) {
-        if (graph.edgeSet().isEmpty()) {
-            return graph;
-        }
         Graph<V, E> subgraph = new SimpleGraph<>(null, graph.getEdgeSupplier(), false);
         Graphs.addAllVertices(subgraph, subgraphVertices);
         Set<E> inducedEdges = graph.edgeSet().stream()

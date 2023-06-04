@@ -323,7 +323,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         return false;
     }
 
-    private Pair<Integer, Integer> SumCycleSides(Graph<V,E> G, List<V> cycle,
+    @VisibleForTesting
+    Pair<Integer, Integer> SumCycleSides(Graph<V,E> G, List<V> cycle,
                                PlanarityTestingAlgorithm.Embedding embedding, Map<E,Integer> outgoingEdgesWeights){
         int count1=0,count2=0;
 
@@ -332,11 +333,12 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
             V nextV  = cycle.get(nextIndex);
             int prevIndex = Math.floorMod(i-1,cycle.size());
             V prevV  = cycle.get(prevIndex);
+            V v = cycle.get(i);
 
             List<E> outEdges = embedding.getEdgesAround(cycle.get(i));
             int prevEdgeIndex=0, nextEdgeIndex=0;
             for (int j=0;j<outEdges.size();j++){
-                V v2 = G.getEdgeTarget(outEdges.get(j));
+                V v2 = Graphs.getOppositeVertex(G, outEdges.get(j), v);
                 if(v2.equals(prevV))prevEdgeIndex=j;
                 if(v2.equals(nextV))nextEdgeIndex=j;
             }
@@ -585,9 +587,10 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                         queue.add(neighbor);
                         visited.add(neighbor);
                         spanningTree.addVertex(neighbor);
-                        spanningTree.addEdge(vertex, neighbor);
+                        spanningTree.addEdge(sourceGraph.getEdgeSource(edge), sourceGraph.getEdgeTarget(edge), edge);
                     }
                 }
+                visited.add(vertex);
             }
         }
         spanningTreeParentNodes = parentNodes;

@@ -2,6 +2,7 @@ package org.example.algorithms.separator;
 
 import org.jgrapht.Graph;
 import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,26 @@ import static java.util.Map.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class OutgoingEdgesWeightsTest {
+
+    @Test
+    void shouldSumCycleSides() {
+        var graph = createTreeGraph();
+        var algorithm = new PlanarConnectedSeparatorFindingAlgorithm<>(graph);
+        var embedding = new BoyerMyrvoldPlanarityInspector<>(graph).getEmbedding();
+        var spanningTree = algorithm.createSpanningTreeUsingBFS(8);
+        graph.addEdge(3, 4);
+        int v1 = 3;
+        int v2 = 4;
+
+        int commonAncestor = algorithm.getLowestCommonAncestor(3, 4);
+        List<Integer> cycle = algorithm.getCycle(v1, v2, commonAncestor);
+
+        var weights = algorithm.computeOutgoingEdgeWeights(spanningTree, v1, v2, commonAncestor, cycle);
+        System.out.println(weights);
+
+        Pair<Integer,Integer> areaAndCycleValue = algorithm.SumCycleSides(spanningTree,cycle,embedding,weights);
+        System.out.println(areaAndCycleValue);
+    }
 
     @Test
     void shouldFindCycle() {

@@ -1,12 +1,9 @@
 package org.example;
 
-import org.checkerframework.checker.units.qual.A;
 import org.example.algorithms.coloring.PlanarThreeColoring;
-import org.example.algorithms.separator.PlanarConnectedSeparatorFindingAlgorithm;
+import org.example.algorithms.coloring.ThreeColoringForGraphAndColoredNeighbors;
 import org.jgrapht.Graph;
-import org.jgrapht.alg.interfaces.VertexColoringAlgorithm;
 import org.jgrapht.alg.interfaces.VertexColoringAlgorithm.Coloring;
-import org.jgrapht.generate.CompleteGraphGenerator;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 import org.jgrapht.nio.graph6.Graph6Sparse6Importer;
@@ -19,7 +16,7 @@ import picocli.CommandLine.Parameters;
 
 import java.io.File;
 import java.io.StringReader;
-import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class Main {
@@ -30,6 +27,9 @@ public class Main {
 
         @ArgGroup(exclusive = true)
         private Args args;
+
+        @Option(names = {"-b"}, paramLabel = "Brute force", description = "Run with brute force algorithm")
+        private boolean bruteForce;
 
         static class Args {
             @Option(names = {"-f"}, paramLabel = "File", description = "File with graph in graph6 format")
@@ -49,7 +49,12 @@ public class Main {
             } else {
                 importer.importGraph(graph, new StringReader(args.graphCode));
             }
-            Coloring<Integer> threeColoring = new PlanarThreeColoring<>(graph).getColoring();
+            Coloring<Integer> threeColoring = null;
+            if (bruteForce) {
+                threeColoring = new ThreeColoringForGraphAndColoredNeighbors<>(graph, Map.of()).getColoring();
+            } else {
+                threeColoring = new PlanarThreeColoring<>(graph).getColoring();
+            }
             if (threeColoring == null) {
                 System.err.println("Three coloring is not possible on a given graph");
             } else {

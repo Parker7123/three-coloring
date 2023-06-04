@@ -511,8 +511,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         int centerLevel = findTreeCenterOfGravityLevel(treeLevels);
 
         if(checkSingleLevelSeparatorSize(treeLevels.get(centerLevel))) {
-            //submitSingleLevelSeparator(treeLevels,centerLevel);
-            //return null;
+//            submitSingleLevelSeparator(treeLevels,centerLevel);
+//            return null;
             //Todo
         }
 
@@ -520,8 +520,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         int levelAbove = findLevelAboveCenter(treeLevels,centerLevel);
 
         if(checkTwoLevelsSeparatorSize(treeLevels,levelBelow,levelAbove)) {
-            //submitTwoLevelsSeparator(treeLevels,levelBelow,levelAbove);
-            //return null;
+//            submitTwoLevelsSeparator(treeLevels,levelBelow,levelAbove);
+//            return null;
             //Todo
         }
 

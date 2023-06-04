@@ -16,3 +16,7 @@ File example\
 
 Grid graph\
 `gradlew run --args="OrGWGd@A?G_P?@?__GG@@"`
+\
+\
+Example brute force coloring of 5 vertex cycle\
+`gradlew run --args="-b EhEG"`

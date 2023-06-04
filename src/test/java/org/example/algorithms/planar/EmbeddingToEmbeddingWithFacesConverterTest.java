@@ -9,6 +9,8 @@ import org.jgrapht.graph.SimpleGraph;
 import org.jgrapht.util.SupplierUtil;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 class EmbeddingToEmbeddingWithFacesConverterTest {
 
     @Test
@@ -21,7 +23,7 @@ class EmbeddingToEmbeddingWithFacesConverterTest {
         var embedding = new BoyerMyrvoldPlanarityInspector<>(completeGraph).getEmbedding();
         var dcel = EmbeddingToEmbeddingWithFacesConverter.convert(embedding);
 
-        assert dcel.getFaces().size() == 4;
+        assertThat(dcel.getFaces().size()).isEqualTo(4);
     }
 
     @Test
@@ -34,8 +36,8 @@ class EmbeddingToEmbeddingWithFacesConverterTest {
         var embedding = new BoyerMyrvoldPlanarityInspector<>(cycle).getEmbedding();
         var embeddingWithFaces = EmbeddingToEmbeddingWithFacesConverter.convert(embedding);
 
-        assert embeddingWithFaces.getFaces().size() == 2;
-        assert embeddingWithFaces.getFaces().get(0).edges().size() == 10;
-        assert embeddingWithFaces.getFaces().get(1).edges().size() == 10;
+        assertThat(embeddingWithFaces.getFaces().size()).isEqualTo(2);
+        assertThat(embeddingWithFaces.getFaces().get(0).edges().size()).isEqualTo(10);
+        assertThat(embeddingWithFaces.getFaces().get(1).edges().size()).isEqualTo(10);
     }
 }

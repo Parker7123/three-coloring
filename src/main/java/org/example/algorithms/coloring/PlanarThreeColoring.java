@@ -25,7 +25,6 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
 
     @Override
     public Coloring<V> getColoring() {
-        System.out.println("getting coloring");
         var coloring = threeColoringForPlanarGraphAndColoredNeighbors(sourceGraph, new HashMap<>());
         if (coloring != null) {
             if (!checkColoring(sourceGraph, coloring)) {
@@ -55,18 +54,15 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         Set<V> subsetA = separatorFindingAlgorithm.getSubsetA();
         Set<V> subsetB = separatorFindingAlgorithm.getSubsetB();
         Graph<V, E> graphInducedBySeparator = subgraph(graph, separator);
-        System.out.println(separator.size());
         var threeColoringAlgorithm = new ThreeColoringForGraphAndColoredNeighbors<>(graphInducedBySeparator,
                 unmodifiableMap(restrictedColors));
         List<Coloring<V>> validSeparatorColorings = threeColoringAlgorithm.getListOfValidColorings();
-        System.out.println("found separator colorings");
         if (validSeparatorColorings.isEmpty()) {
             return null;
         }
         Graph<V, E> graphInducedBySubsetA = subgraph(graph, subsetA);
         Graph<V, E> graphInducedBySubsetB = subgraph(graph, subsetB);
         for (Coloring<V> separatorColoring : validSeparatorColorings) {
-            System.out.println("testing new separator coloring");
             var currentlyRestrictedColors = generateRestrictedColors(separatorColoring);
             var mergedRestrictedColors = mergeRestrictedColors(restrictedColors, currentlyRestrictedColors);
             // TODO: idea: introduce map: vertex -> color

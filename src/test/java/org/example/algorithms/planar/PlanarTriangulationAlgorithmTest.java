@@ -8,7 +8,7 @@ import org.jgrapht.graph.SimpleGraph;
 import org.jgrapht.util.SupplierUtil;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class PlanarTriangulationAlgorithmTest {
 
@@ -22,10 +22,9 @@ class PlanarTriangulationAlgorithmTest {
         var embedding = new BoyerMyrvoldPlanarityInspector<>(cycle).getEmbedding();
         var embeddingWithFaces = new PlanarTriangulationAlgorithm<>(embedding).triangulate();
         System.out.println(embeddingWithFaces.getGraph().edgeSet().size());
-        assert embeddingWithFaces.getGraph().edgeSet().size() == 3 * 5 - 6;
-        assert embeddingWithFaces.getFaces().size() == 6;
-        for (var face : embeddingWithFaces.getFaces()) {
-            assert face.edges().size() == 3;
-        }
+        assertThat(embeddingWithFaces.getGraph().edgeSet()).hasSize(3 * 5 - 6);
+        assertThat(embeddingWithFaces.getFaces()).hasSize(6);
+        assertThat(embeddingWithFaces.getFaces())
+                .allSatisfy(face -> assertThat(face.edges().size()).isEqualTo(3));
     }
 }

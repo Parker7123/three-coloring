@@ -2,12 +2,13 @@ package org.example.algorithms.separator;
 
 import org.example.algorithms.planar.PlanarTriangulationAlgorithm;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
 import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
 import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.SimpleGraph;
+import org.jheaps.annotations.VisibleForTesting;
 
-import java.util.Set;
 import java.util.*;
 
 public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAlgorithm<V> {
@@ -16,17 +17,18 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     private Set<V> separator;
     private Set<V> subsetA;
     private Set<V> subsetB;
+
     private Map<V,V> spanningTreeParentNodes;
 
     public PlanarConnectedSeparatorFindingAlgorithm(Graph<V, E> sourceGraph) {
         this.sourceGraph = sourceGraph;
         this.n = sourceGraph.vertexSet().size();
     }
+
     @Override
     public Set<V> getSparator() {
         return separator;
     }
-
     @Override
     public Set<V> getSubsetA() {
         return subsetA;
@@ -35,6 +37,10 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     @Override
     public Set<V> getSubsetB() {
         return subsetB;
+    }
+
+    public Map<V, V> getSpanningTreeParentNodes() {
+        return spanningTreeParentNodes;
     }
 
     public void runAlgorithm() {
@@ -112,17 +118,24 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
     }
 
+    @VisibleForTesting
+    Map<E, Integer> computeOutgoingEdgeWeights(Graph<V,E> G, V v1, V v2, V commonAncestor, List<V> cycle) {
+        Map<E,Integer>  outgoingEdgesWeights = new HashMap<>();
+        getEdgesWeights(G,v1,commonAncestor, outgoingEdgesWeights);
+        getEdgesWeights(G,v2,commonAncestor, outgoingEdgesWeights);
+        getEdgesWeightsForCommonAncestor(G,commonAncestor,cycle,outgoingEdgesWeights);
+
+        return outgoingEdgesWeights;
+    }
+
     private void complexStage(Graph<V,E> G, PlanarityTestingAlgorithm.Embedding embedding){
         E cycleEdge = pickNontreeEdge(G);
         V v1 = sourceGraph.getEdgeSource(cycleEdge);
         V v2 = sourceGraph.getEdgeTarget(cycleEdge);
         V commonAncestor = getLowestCommonAncestor(v1,v2);
-        Map<E,Integer>  outgoingEdgesWeights = new HashMap<>();
-        getEdgesWeights(G,v1,commonAncestor, outgoingEdgesWeights);
-        getEdgesWeights(G,v2,commonAncestor, outgoingEdgesWeights);
-
         List<V> cycle = getCycle(v1,v2,commonAncestor);
-        getEdgesWeightsForCommonAncestor(G,commonAncestor,cycle,outgoingEdgesWeights);
+
+        Map<E, Integer> outgoingEdgesWeights = computeOutgoingEdgeWeights(G, v1, v2, commonAncestor, cycle);
 
         Pair<Integer,Integer> areaAndCycleValue = SumCycleSides(G,cycle,embedding,outgoingEdgesWeights);
         int area = areaAndCycleValue.getFirst();
@@ -186,7 +199,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     }
 
 
-    private List<V> getCycle(V v1, V v2, V commonAncestor){
+    @VisibleForTesting
+    List<V> getCycle(V v1, V v2, V commonAncestor){
         List<V> path1 = getUpPath(v1,commonAncestor);
         path1.add(commonAncestor);
 
@@ -204,7 +218,9 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
         return path;
     }
-    private V getLowestCommonAncestor(V v1, V v2){
+
+    @VisibleForTesting
+    V getLowestCommonAncestor(V v1, V v2){
         List<V> path1 = getPathToRoot(v1);
         do{
             if(path1.contains(v2))return v2;
@@ -285,13 +301,14 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     
             return levels;
     }
-    private Graph<V,E> createSpanningTreeUsingBFS(V startVertex) {
+
+    @VisibleForTesting
+    Graph<V,E> createSpanningTreeUsingBFS(V startVertex) {
 
         Graph<V,E> spanningTree = new SimpleGraph<V,E>(sourceGraph.getVertexSupplier(),sourceGraph.getEdgeSupplier(),false);
         Queue<V> queue = new LinkedList<>();
         Set<V> visited = new HashSet<>();
         Map<V,V> parentNodes = new HashMap<>();
-
         parentNodes.put(startVertex,null);
         spanningTree.addVertex(startVertex);
         queue.add(startVertex);
@@ -304,9 +321,9 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                 V vertex = queue.poll();
 
                 for (E edge : sourceGraph.outgoingEdgesOf(vertex)) {
-                    V neighbor = sourceGraph.getEdgeTarget(edge);
-                    parentNodes.put(neighbor,vertex);
+                    V neighbor = Graphs.getOppositeVertex(sourceGraph, edge, vertex);
                     if (!visited.contains(neighbor)) {
+                        parentNodes.put(neighbor,vertex);
                         queue.add(neighbor);
                         visited.add(neighbor);
                         spanningTree.addVertex(neighbor);

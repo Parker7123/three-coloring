@@ -1,10 +1,10 @@
 package org.example.algorithms.separator;
 
-import com.google.common.graph.Graphs;
 import org.example.algorithms.planar.PlanarTriangulationAlgorithm;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
 import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.SimpleGraph;
 
 import java.util.Set;
@@ -52,9 +52,9 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         complexStage(modifiedGraph,embedding);
     }
 
-    private void F(Graph<V,E> G, List<V> cycle,PlanarityTestingAlgorithm.Embedding embedding){
-
-        int count1,count2;
+    private Pair<Integer, Integer> SumCycleSides(Graph<V,E> G, List<V> cycle,
+                               PlanarityTestingAlgorithm.Embedding embedding, Map<E,Integer> outgoingEdgesWeights){
+        int count1=0,count2=0;
 
         for(int i=0;i<cycle.size();i++){
             int nextIndex = Math.floorMod(i+1,cycle.size());
@@ -70,19 +70,45 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                 if(v2.equals(nextV))nextEdgeIndex=j;
             }
 
-            int j = prevEdgeIndex;
-            do{
-                j++;
-                if(j>=outEdges.size())j=0;
-            }while(j==prevEdgeIndex);
+            int area = 0;
 
-//            int nextIndex = Math.floorMod(i+1,cycle.size());
-//            int prevIndex = Math.floorMod(i-1,cycle.size());
-//            for (E edge : G.outgoingEdgesOf(cycle.get(i))) {
-//                V v2 = G.getEdgeTarget(edge);
-//                if(v2.equals(cycle.get(nextIndex))||v2.equals(cycle.get(prevIndex)))continue;
-//
-//            }
+           for(int j=0;j<outEdges.size();j++) {
+
+               if(j==prevEdgeIndex) {
+                   area = 1;
+                   continue;
+               }
+               else if(j==nextEdgeIndex) {
+                   area = 2;
+                   continue;
+               }
+
+               if(area==1) {
+                   count1 += outgoingEdgesWeights.get(outEdges.get(j));
+               }
+               else if(area==2) {
+                   count2 += outgoingEdgesWeights.get(outEdges.get(j));
+               }
+           }
+
+            for(int j=0;j<outEdges.size();j++){
+                if(j==prevEdgeIndex || j==nextEdgeIndex) {
+                    break;
+                }
+                if(area==1) {
+                    count1 += outgoingEdgesWeights.get(outEdges.get(j));
+                }
+                else if(area==2) {
+                    count2 += outgoingEdgesWeights.get(outEdges.get(j));
+                }
+            }
+        }
+
+        if(count1 > count2){
+            return new Pair<>(1,count1);
+        }
+        else{
+            return new Pair<>(2,count2);
         }
     }
 
@@ -91,14 +117,19 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         V v1 = sourceGraph.getEdgeSource(cycleEdge);
         V v2 = sourceGraph.getEdgeTarget(cycleEdge);
         V commonAncestor = getLowestCommonAncestor(v1,v2);
-        Map<E,Number>  outgoingEdgesWeights = new HashMap<>();
+        Map<E,Integer>  outgoingEdgesWeights = new HashMap<>();
         getEdgesWeights(G,v1,commonAncestor, outgoingEdgesWeights);
         getEdgesWeights(G,v2,commonAncestor, outgoingEdgesWeights);
 
         List<V> cycle = getCycle(v1,v2,commonAncestor);
+        getEdgesWeightsForCommonAncestor(G,commonAncestor,cycle,outgoingEdgesWeights);
+
+        Pair<Integer,Integer> areaAndCycleValue = SumCycleSides(G,cycle,embedding,outgoingEdgesWeights);
+        int area = areaAndCycleValue.getFirst();
+        int CycleValue = areaAndCycleValue.getSecond();
     }
 
-    private void getEdgesWeightsForCommonAncestor(Graph<V,E> G, V v1, List<V> cycle,Map<E,Number> edgesWeights){
+    private void getEdgesWeightsForCommonAncestor(Graph<V,E> G, V v1, List<V> cycle,Map<E,Integer> edgesWeights){
 
         int v1Index = cycle.indexOf(v1);
 
@@ -119,7 +150,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
     }
 
-    private void getEdgesWeights(Graph<V,E> G,V v1, V commonAncestor,Map<E,Number> weights){
+    private void getEdgesWeights(Graph<V,E> G,V v1, V commonAncestor,Map<E,Integer> weights){
         V prev = null;
 
         while (!v1.equals(commonAncestor)) {

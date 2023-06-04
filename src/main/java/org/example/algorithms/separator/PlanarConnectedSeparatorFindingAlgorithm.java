@@ -3,6 +3,7 @@ package org.example.algorithms.separator;
 import com.google.common.graph.Graphs;
 import org.example.algorithms.planar.PlanarTriangulationAlgorithm;
 import org.jgrapht.Graph;
+import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
 import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
 import org.jgrapht.graph.SimpleGraph;
 
@@ -48,25 +49,44 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
         // 3
         // całe szukanie cyklu
-        complexStage(ModifiedGraph);
+        complexStage(modifiedGraph,embedding);
     }
 
-    private void F(Graph<V,E> G, List<V> cycle){
+    private void F(Graph<V,E> G, List<V> cycle,PlanarityTestingAlgorithm.Embedding embedding){
 
         int count1,count2;
 
         for(int i=0;i<cycle.size();i++){
             int nextIndex = Math.floorMod(i+1,cycle.size());
+            V nextV  = cycle.get(nextIndex);
             int prevIndex = Math.floorMod(i-1,cycle.size());
-            for (E edge : G.outgoingEdgesOf(cycle.get(i))) {
-                V v2 = G.getEdgeTarget(edge);
-                if(v2.equals(cycle.get(nextIndex))||v2.equals(cycle.get(prevIndex)))continue;
+            V prevV  = cycle.get(prevIndex);
 
+            List<E> outEdges = embedding.getEdgesAround(cycle.get(i));
+            int prevEdgeIndex=0, nextEdgeIndex=0;
+            for (int j=0;j<outEdges.size();j++){
+                V v2 = G.getEdgeTarget(outEdges.get(j));
+                if(v2.equals(prevV))prevEdgeIndex=j;
+                if(v2.equals(nextV))nextEdgeIndex=j;
             }
+
+            int j = prevEdgeIndex;
+            do{
+                j++;
+                if(j>=outEdges.size())j=0;
+            }while(j==prevEdgeIndex);
+
+//            int nextIndex = Math.floorMod(i+1,cycle.size());
+//            int prevIndex = Math.floorMod(i-1,cycle.size());
+//            for (E edge : G.outgoingEdgesOf(cycle.get(i))) {
+//                V v2 = G.getEdgeTarget(edge);
+//                if(v2.equals(cycle.get(nextIndex))||v2.equals(cycle.get(prevIndex)))continue;
+//
+//            }
         }
     }
 
-    private void complexStage(Graph<V,E> G){
+    private void complexStage(Graph<V,E> G, PlanarityTestingAlgorithm.Embedding embedding){
         E cycleEdge = pickNontreeEdge(G);
         V v1 = sourceGraph.getEdgeSource(cycleEdge);
         V v2 = sourceGraph.getEdgeTarget(cycleEdge);

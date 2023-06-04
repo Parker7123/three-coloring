@@ -71,12 +71,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         V v1 = sourceGraph.getEdgeSource(cycleEdge);
         V v2 = sourceGraph.getEdgeTarget(cycleEdge);
         V commonAncestor = getLowestCommonAncestor(v1,v2);
-        Map<E,Integer>  outgoingEdgesWeights = new HashMap<>();
-        getEdgesWeights(G,v1,commonAncestor, outgoingEdgesWeights);
-        getEdgesWeights(G,v2,commonAncestor, outgoingEdgesWeights);
-
         List<V> cycle = getCycle(v1,v2,commonAncestor);
-        getEdgesWeightsForCommonAncestor(G,commonAncestor,cycle,outgoingEdgesWeights);
+        Map<E, Integer> outgoingEdgesWeights = computeOutgoingEdgeWeights(spanningTree, v1, v2, commonAncestor, cycle);
 
         Pair<Integer,Integer> areaAndCycleValue = SumCycleSides(G,cycle,embedding,outgoingEdgesWeights);
         int area = areaAndCycleValue.getFirst();
@@ -294,8 +290,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         V vPrev = cycle.get(vPrevIndex);
 
         for(E e : G.outgoingEdgesOf(v1)){
-            V v2 = G.getEdgeTarget(e);
-            if(v2.equals(vNext)||v2.equals(vPrev))continue;
+            V v2 = Graphs.getOppositeVertex(G, e, v1);
+            if(v2.equals(vNext)||v2.equals(vPrev)) continue;
             int count = countSubtreeVerticesRecursive(G,v2,v1);
             edgesWeights.put(e, count);
         }
@@ -326,10 +322,11 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
     private int countSubtreeVerticesRecursive(Graph<V, E> G, V vertex, V parent) {
         int count = 1;
-
         for (E edge : G.outgoingEdgesOf(vertex)) {
-            V v = Graphs.getOppositeVertex(G,edge, parent);
-            if(v.equals(parent))break;
+            V v = Graphs.getOppositeVertex(G,edge, vertex);
+            if(v.equals(parent)) {
+                continue;
+            }
             count += countSubtreeVerticesRecursive(G, v,vertex);
         }
 

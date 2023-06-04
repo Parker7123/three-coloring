@@ -309,7 +309,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
             for (E e : G.outgoingEdgesOf(v1)) {
 
-                V outgoingVertex = G.getEdgeTarget(e);
+                V outgoingVertex = Graphs.getOppositeVertex(G, e, v1);
                 if (outgoingVertex.equals(parent) || outgoingVertex.equals(prev)) continue;
 
                 int count = countSubtreeVerticesRecursive(G, outgoingVertex, v1);
@@ -328,7 +328,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         int count = 1;
 
         for (E edge : G.outgoingEdgesOf(vertex)) {
-            V v = G.getEdgeTarget(edge);
+            V v = Graphs.getOppositeVertex(G,edge, parent);
             if(v.equals(parent))break;
             count += countSubtreeVerticesRecursive(G, v,vertex);
         }

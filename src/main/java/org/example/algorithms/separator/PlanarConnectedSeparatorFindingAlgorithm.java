@@ -264,12 +264,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
             }
         }
 
-        if(count1 > count2){
-            return new Pair<>(1,count1);
-        }
-        else{
-            return new Pair<>(2,count2);
-        }
+        return new Pair<>(count1,count2);
     }
 
     @VisibleForTesting

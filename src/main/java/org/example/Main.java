@@ -31,6 +31,11 @@ public class Main {
         @Option(names = {"-b"}, paramLabel = "Brute force", description = "Run with brute force algorithm")
         private boolean bruteForce;
 
+        @Option(names = {"-s"}, paramLabel = "Simple separator", description = "Use simple separator algorithm " +
+                "instead of default planar separator algorithm. Simple separator algorithm separates one vertex, whereas " +
+                "planar separator algorithm finds separator using \"A separator theorem for planar graphs\".")
+        private boolean simpleSeparator;
+
         static class Args {
             @Option(names = {"-f"}, paramLabel = "File", description = "File with graph in graph6 format")
             private File file;
@@ -49,12 +54,14 @@ public class Main {
             } else {
                 importer.importGraph(graph, new StringReader(args.graphCode));
             }
-            Coloring<Integer> threeColoring = null;
+            Coloring<Integer> threeColoring;
+
             if (bruteForce) {
                 threeColoring = new ThreeColoringForGraphAndColoredNeighbors<>(graph, Map.of()).getColoring();
             } else {
-                threeColoring = new PlanarThreeColoring<>(graph).getColoring();
+                threeColoring = new PlanarThreeColoring<>(graph, simpleSeparator).getColoring();
             }
+
             if (threeColoring == null) {
                 System.err.println("Three coloring is not possible on a given graph");
             } else {

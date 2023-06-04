@@ -21,36 +21,52 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
 
     private final Graph<V, E> sourceGraph;
     private final int sourceGraphSize;
+    private boolean useSimpleSeparator;
 
     @Override
     public Coloring<V> getColoring() {
-        return threeColoringForPlanarGraphAndColoredNeighbors(sourceGraph, new HashMap<>());
+        System.out.println("getting coloring");
+        var coloring = threeColoringForPlanarGraphAndColoredNeighbors(sourceGraph, new HashMap<>());
+        if (coloring != null) {
+            if (!checkColoring(sourceGraph, coloring)) {
+                throw new IllegalStateException("Coloring is not valid three coloring");
+            }
+        }
+        return coloring;
     }
 
-    public PlanarThreeColoring(Graph<V, E> sourceGraph) {
+    public PlanarThreeColoring(Graph<V, E> sourceGraph, boolean useSimpleSeparator) {
         this.sourceGraph = sourceGraph;
         this.sourceGraphSize = sourceGraph.vertexSet().size();
+        this.useSimpleSeparator = useSimpleSeparator;
     }
 
     private Coloring<V> threeColoringForPlanarGraphAndColoredNeighbors(Graph<V, E> graph, Map<V, Set<Integer>> restrictedColors) {
         if (graph.vertexSet().size() <= Math.sqrt(sourceGraphSize)) {
             return new ThreeColoringForGraphAndColoredNeighbors<>(graph, unmodifiableMap(restrictedColors)).getColoring();
         }
-        SeparatorFindingAlgorithm<V> separatorFindingAlgorithm = new PlanarSeparatorFindingAlgorithm<>(graph);
+        SeparatorFindingAlgorithm<V> separatorFindingAlgorithm;
+        if (useSimpleSeparator) {
+            separatorFindingAlgorithm = new SimpleSeparatorFindingAlgorithm<>(graph);
+        } else {
+            separatorFindingAlgorithm = new PlanarSeparatorFindingAlgorithm<>(graph);
+        }
         Set<V> separator = separatorFindingAlgorithm.getSparator();
         Set<V> subsetA = separatorFindingAlgorithm.getSubsetA();
         Set<V> subsetB = separatorFindingAlgorithm.getSubsetB();
         Graph<V, E> graphInducedBySeparator = subgraph(graph, separator);
-
+        System.out.println(separator.size());
         var threeColoringAlgorithm = new ThreeColoringForGraphAndColoredNeighbors<>(graphInducedBySeparator,
                 unmodifiableMap(restrictedColors));
         List<Coloring<V>> validSeparatorColorings = threeColoringAlgorithm.getListOfValidColorings();
+        System.out.println("found separator colorings");
         if (validSeparatorColorings.isEmpty()) {
             return null;
         }
         Graph<V, E> graphInducedBySubsetA = subgraph(graph, subsetA);
         Graph<V, E> graphInducedBySubsetB = subgraph(graph, subsetB);
         for (Coloring<V> separatorColoring : validSeparatorColorings) {
+            System.out.println("testing new separator coloring");
             var currentlyRestrictedColors = generateRestrictedColors(separatorColoring);
             var mergedRestrictedColors = mergeRestrictedColors(restrictedColors, currentlyRestrictedColors);
             // TODO: idea: introduce map: vertex -> color
@@ -82,10 +98,15 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
     /**
      * Complexity: O(n)
      */
-    private Map<V, Set<Integer>> mergeRestrictedColors(Map<V, Set<Integer>> c1,Map<V, Set<Integer>>c2) {
+    private Map<V, Set<Integer>> mergeRestrictedColors(Map<V, Set<Integer>> c1, Map<V, Set<Integer>> c2) {
         return Stream.of(c1, c2)
                 .flatMap(vSetMap -> vSetMap.entrySet().stream())
                 .collect(groupingBy(Map.Entry::getKey, mapping(Map.Entry::getValue,
                         Collectors.flatMapping(Collection::stream, toSet()))));
+    }
+
+    private boolean checkColoring(Graph<V, E> graph, Coloring<V> coloring) {
+        return graph.edgeSet().stream()
+                .noneMatch(e -> coloring.getColors().get(graph.getEdgeSource(e)).equals(coloring.getColors().get(graph.getEdgeTarget(e))));
     }
 }

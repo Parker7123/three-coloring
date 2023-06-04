@@ -8,18 +8,16 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class PlanarThreeColoringTest {
 
     @Test
     void bigGridGraphTest() {
-        GridGraphGenerator<Integer, DefaultEdge> gridGraphGenerator = new GridGraphGenerator<>(5, 5);
+        GridGraphGenerator<Integer, DefaultEdge> gridGraphGenerator = new GridGraphGenerator<>(30, 30);
         var graph = new SimpleGraph<>(SupplierUtil.createIntegerSupplier(),
                 SupplierUtil.createDefaultEdgeSupplier(), false);
         gridGraphGenerator.generateGraph(graph, null);
 
-        var planarThreeColoring = new PlanarThreeColoring<>(graph);
+        var planarThreeColoring = new PlanarThreeColoring<>(graph, false);
 
         long start = Instant.now().toEpochMilli();
         var coloring = planarThreeColoring.getColoring();

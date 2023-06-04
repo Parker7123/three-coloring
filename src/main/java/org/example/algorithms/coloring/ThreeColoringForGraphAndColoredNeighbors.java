@@ -1,14 +1,13 @@
 package org.example.algorithms.coloring;
 
 import org.jgrapht.Graph;
-import org.jgrapht.Graphs;
 import org.jgrapht.alg.interfaces.VertexColoringAlgorithm;
 import org.jgrapht.alg.util.Pair;
 
 import java.util.*;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 import static org.example.algorithms.coloring.ThreeColoringUtils.*;
 
 /**

@@ -83,6 +83,7 @@ public class PlanarSeparatorFindingAlgorithm<V, E> implements SeparatorFindingAl
         Graph<V, E> biggestComponentGraph = subgraph(sourceGraph, biggestComponent);
 
         var connectedSeparatorAlg = new PlanarConnectedSeparatorFindingAlgorithm<>(biggestComponentGraph);
+        connectedSeparatorAlg.runAlgorithm();
 
         this.separator = connectedSeparatorAlg.getSparator();
         if (connectedSeparatorAlg.getSubsetA().size() > connectedSeparatorAlg.getSubsetB().size()) {

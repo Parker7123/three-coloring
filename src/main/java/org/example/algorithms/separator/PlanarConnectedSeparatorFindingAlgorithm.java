@@ -56,8 +56,9 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
         // 1 - Simple Stage
         Graph<V,E> modifiedGraph = simpleStage();
-        Graph<V,E> spanningTree = subgraph(modifiedGraph,modifiedGraph.vertexSet());
         if(modifiedGraph==null) return;
+        Graph<V,E> spanningTree = subgraph(modifiedGraph,modifiedGraph.vertexSet());
+
 
         // 2
         var embedding = new BoyerMyrvoldPlanarityInspector<>(modifiedGraph).getEmbedding();
@@ -70,7 +71,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
     private void complexStage(Graph<V,E> G, Graph<V,E> spanningTree,
                               PlanarityTestingAlgorithm.Embedding embedding, EmbeddingWithFaces triangulatedFaces){
-        E cycleEdge = pickNontreeEdge(G);
+        E cycleEdge = pickNontreeEdge(spanningTree,G);
         V v1 = sourceGraph.getEdgeSource(cycleEdge);
         V v2 = sourceGraph.getEdgeTarget(cycleEdge);
         V commonAncestor = getLowestCommonAncestor(v1,v2);
@@ -99,19 +100,54 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         catch (Exception ex){
 
         }
-
-        // TODO Step 10
+        initializeSets();
+        CountSeparatorAndSubsets(cycle,spanningTree,embedding,area);
 
     }
 
-    private void CountSeparatorAndSubsets(List<V> cycle){
-//        separator.addAll(cycle);
-//        separator.addAll(spanningTreeLevels.get(level0));
-//        separator.addAll(spanningTreeLevels.get(level2));
-//        separator.
+    private void CountSeparatorAndSubsets(List<V> cycle,Graph<V,E> spanningTree,PlanarityTestingAlgorithm.Embedding embedding, int area){
+
+        for(int i =0;i<cycle.size();i++){
+            V vertex = cycle.get(i);
+
+            //int nextIndex = Math.floorMod(i+1,cycle.size());
+            //int prevIndex = Math.floorMod(i-1,cycle.size());
+
+            for(E e : spanningTree.outgoingEdgesOf(vertex)){
+
+                V v2 = Graphs.getOppositeVertex(spanningTree,e,vertex);
+                //if(v2.equals(cycle.get(nextIndex))||v2.equals(cycle.get(prevIndex)))continue;
+
+                if(checkIfEdgeInArea(spanningTree,cycle,area,embedding,e)){
+                    addToSetBSubtreeVerticesRecursive(spanningTree,v2,vertex);
+                }
+            }
+        }
+
+        if(cycle.contains(spanningTreeLevels.get(0).get(0)))
+            cycle.remove(spanningTreeLevels.get(0).get(0));
+        separator.addAll(cycle);
+        separator.addAll(spanningTreeLevels.get(level0));
+        separator.addAll(spanningTreeLevels.get(level2));
+
+//        for(int i=0;i<this.level0;i++){
+//            subsetA.addAll(spanningTreeLevels.get(i));
+//        }
+//        for(int i=this.level2+1;i<this.spanningTreeLevels.size();i++){
+//            subsetA.addAll(spanningTreeLevels.get(i));
+//        }
+        for(int i=0;i<spanningTreeLevels.size();i++){
+            subsetA.addAll(spanningTreeLevels.get(i));
+        }
+        for (V v:this.subsetB) {
+            subsetA.remove(v);
+        }
+        for (V v:this.separator) {
+            subsetA.remove(v);
+        }
     }
 
-    private void findSufficientCycle(Graph<V,E> G, Graph<V,E> spanningTree, List<V> cycle,
+    private List<V> findSufficientCycle(Graph<V,E> G, Graph<V,E> spanningTree, List<V> cycle,
                                      int area, int cycleValue, E cycleEdge,
                                      PlanarityTestingAlgorithm.Embedding embedding,
                                      EmbeddingWithFaces<V,E> triangulatedFaces,
@@ -185,6 +221,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                     throw new Exception("Error in findSufficientCycle: More than one edge lies inside the cycle");
             }
         }
+        return cycle;
     }
 
     private void findClosestVertexOnCycleAndUpdateWeights(Graph<V,E> spanningTree, List<V> cycle, V vertex){
@@ -393,6 +430,15 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
 
     }
 
+    private void addToSetBSubtreeVerticesRecursive(Graph<V, E> spanningTree, V vertex, V parent) {
+        this.subsetB.add(vertex);
+        for (E edge : spanningTree.outgoingEdgesOf(vertex)) {
+            V v = spanningTree.getEdgeTarget(edge);
+            if(v.equals(parent))break;
+            addToSetBSubtreeVerticesRecursive(spanningTree, v,vertex);
+        }
+    }
+
     private int countSubtreeVerticesRecursive(Graph<V, E> G, V vertex, V parent) {
         int count = 1;
 
@@ -446,8 +492,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         return path;
     }
 
-    private E pickNontreeEdge(Graph<V,E> spanningTree){
-        for (E edge : sourceGraph.edgeSet()) { //problem, dać triangulację a nie sourceGraph
+    private E pickNontreeEdge(Graph<V,E> spanningTree,Graph<V,E> G){
+        for (E edge : G.edgeSet()) { //problem, dać triangulację a nie sourceGraph
             if (!spanningTree.containsEdge(edge)) {
                 return edge;
             }
@@ -456,24 +502,28 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     }
 
     private Graph<V,E> simpleStage()    {
-        List<List<V>> treeLevels = spanningTreeLevels = createSpanningTreeLevelsUsingBFS(sourceGraph.vertexSet().stream().findFirst().orElse(null));
+        V startVertex = sourceGraph.vertexSet().stream().findFirst().orElse(null);
+        List<List<V>> treeLevels = spanningTreeLevels = createSpanningTreeLevelsUsingBFS(startVertex);
         Graph<V,E> spanningTree = createSpanningTreeUsingBFS(sourceGraph.vertexSet().stream().findFirst().orElse(null));
         int centerLevel = findTreeCenterOfGravityLevel(treeLevels);
 
         if(checkSingleLevelSeparatorSize(treeLevels.get(centerLevel))) {
-            submitSingleLevelSeparator(treeLevels,centerLevel);
-            return null;
+            //submitSingleLevelSeparator(treeLevels,centerLevel);
+            //return null;
+            //Todo
         }
 
         int levelBelow = findLevelBelowCenter(treeLevels,centerLevel);
         int levelAbove = findLevelAboveCenter(treeLevels,centerLevel);
 
         if(checkTwoLevelsSeparatorSize(treeLevels,levelBelow,levelAbove)) {
-            submitTwoLevelsSeparator(treeLevels,levelBelow,levelAbove);
-            return null;
+            //submitTwoLevelsSeparator(treeLevels,levelBelow,levelAbove);
+            //return null;
+            //Todo
         }
 
         modifyGraphForComplexStage(spanningTree,treeLevels,levelBelow,levelAbove);
+        getAncestors(startVertex,spanningTree);
         this.level0 = levelBelow;
         this.level2 = levelAbove;
         return spanningTree;
@@ -496,7 +546,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
                     levelVertices.add(vertex);
 
                     for (E edge : sourceGraph.outgoingEdgesOf(vertex)) {
-                        V neighbor = sourceGraph.getEdgeTarget(edge);
+                        V neighbor = Graphs.getOppositeVertex(sourceGraph,edge,vertex);
                         if (!visited.contains(neighbor)) {
                             queue.add(neighbor);
                             visited.add(neighbor);
@@ -542,6 +592,34 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
         spanningTreeParentNodes = parentNodes;
         return spanningTree;
+    }
+    private void getAncestors(V startVertex, Graph<V,E> spanningTree) {
+
+        Queue<V> queue = new LinkedList<>();
+        Set<V> visited = new HashSet<>();
+        Map<V,V> parentNodes = new HashMap<>();
+
+        parentNodes.put(startVertex,null);
+        queue.add(startVertex);
+        visited.add(startVertex);
+
+        while (!queue.isEmpty()) {
+            int size = queue.size();
+
+            for (int i = 0; i < size; i++) {
+                V vertex = queue.poll();
+
+                for (E edge : spanningTree.outgoingEdgesOf(vertex)) {
+                    V neighbor = Graphs.getOppositeVertex(spanningTree, edge, vertex);
+                    if (!visited.contains(neighbor)) {
+                        parentNodes.put(neighbor,vertex);
+                        queue.add(neighbor);
+                        visited.add(neighbor);
+                    }
+                }
+            }
+        }
+        spanningTreeParentNodes = parentNodes;
     }
     private int findTreeCenterOfGravityLevel(List<List<V>> tree) {
         int maxLevel = tree.size() - 1;
@@ -639,25 +717,23 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
         return -1;
     }
-    private void modifyGraphForComplexStage(Graph<V, E> tree,List<List<V>> treeLevels, int belowLevel,int aboveLevel){
+    private void modifyGraphForComplexStage(Graph<V, E> spanningTree,List<List<V>> treeLevels, int l0,int l2){
 
-        for(int i=aboveLevel;i<treeLevels.size();i++){
+        for(int i=l2;i<treeLevels.size();i++){
             for (V v:treeLevels.get(i)) {
-                tree.removeVertex(v);
+                spanningTree.removeVertex(v);
             }
         }
         V topVertex = treeLevels.get(0).get(0);
 
-        for(int i=0;i<=treeLevels.size();i++){
+        for(int i=1;i<=l0;i++){
             for (V v:treeLevels.get(i)) {
-                tree.removeVertex(v);
+                spanningTree.removeVertex(v);
             }
         }
 
-        tree.addVertex(topVertex);
-
-        for (V v:treeLevels.get(belowLevel+1)) {
-            tree.addEdge(topVertex, v);
+        for (V v:treeLevels.get(l0+1)) {
+            spanningTree.addEdge(topVertex, v);
         }
     }
     private void initializeSets(){

@@ -14,3 +14,5 @@ Example coloring of k5\
 File example\
 `gradlew run --args="-f ./graph.g6"`
 
+Grid graph\
+`gradlew run --args="OrGWGd@A?G_P?@?__GG@@"`

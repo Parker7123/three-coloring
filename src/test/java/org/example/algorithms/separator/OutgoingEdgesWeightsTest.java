@@ -15,6 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class OutgoingEdgesWeightsTest {
 
     @Test
+    void shouldWork(){
+        var graph = createTreeGraph();
+        var algorithm = new PlanarConnectedSeparatorFindingAlgorithm<>(graph);
+        algorithm.runAlgorithm();
+    }
+    @Test
     void shouldFindCycle() {
         var graph = createTreeGraph();
         var algorithm = new PlanarConnectedSeparatorFindingAlgorithm<>(graph);

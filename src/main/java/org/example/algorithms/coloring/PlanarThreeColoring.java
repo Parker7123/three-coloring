@@ -1,5 +1,6 @@
 package org.example.algorithms.coloring;
 
+import org.example.algorithms.separator.PlanarSeparatorFindingAlgorithm;
 import org.example.algorithms.separator.SeparatorFindingAlgorithm;
 import org.example.algorithms.separator.SimpleSeparatorFindingAlgorithm;
 import org.jgrapht.Graph;
@@ -35,8 +36,7 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         if (graph.vertexSet().size() <= Math.sqrt(sourceGraphSize)) {
             return new ThreeColoringForGraphAndColoredNeighbors<>(graph, unmodifiableMap(restrictedColors)).getColoring();
         }
-        // TODO: Implement PlanarSeparatorFindingAlgorithm and replace
-        SeparatorFindingAlgorithm<V> separatorFindingAlgorithm = new SimpleSeparatorFindingAlgorithm<>(graph);
+        SeparatorFindingAlgorithm<V> separatorFindingAlgorithm = new PlanarSeparatorFindingAlgorithm<>(graph);
         Set<V> separator = separatorFindingAlgorithm.getSparator();
         Set<V> subsetA = separatorFindingAlgorithm.getSubsetA();
         Set<V> subsetB = separatorFindingAlgorithm.getSubsetB();

@@ -34,6 +34,13 @@ public class PlanarTriangulationAlgorithm<V, E> {
 
     private void makeEachFaceACycle() {
         List<EmbeddingWithFaces.Face<V, E>> faces = embedding.getFaces();
+        for(var face : faces){
+            if(face.edges().getLast()==null){
+                face.edges().removeLast();
+                E newEdge = sourceGraph.addEdge(face.edges().getLast().target(),face.edges().getFirst().v());
+                face.edges().add(new EmbeddingWithFaces.Node<>(face.edges().getLast().target(),face.edges().getFirst().v(),newEdge));
+            }
+        }
         for (var face : faces) {
             Set<V> verticesTraversed = new HashSet<>();
             var edgeIterator = face.edges().listIterator();

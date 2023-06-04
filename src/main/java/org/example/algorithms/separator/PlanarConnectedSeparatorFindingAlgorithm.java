@@ -511,8 +511,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         int centerLevel = findTreeCenterOfGravityLevel(treeLevels);
 
         if(checkSingleLevelSeparatorSize(treeLevels.get(centerLevel))) {
-//            submitSingleLevelSeparator(treeLevels,centerLevel);
-//            return null;
+            submitSingleLevelSeparator(treeLevels,centerLevel);
+            return null;
             //Todo
         }
 
@@ -520,8 +520,8 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         int levelAbove = findLevelAboveCenter(treeLevels,centerLevel);
 
         if(checkTwoLevelsSeparatorSize(treeLevels,levelBelow,levelAbove)) {
-//            submitTwoLevelsSeparator(treeLevels,levelBelow,levelAbove);
-//            return null;
+            submitTwoLevelsSeparator(treeLevels,levelBelow,levelAbove);
+            return null;
             //Todo
         }
 
@@ -633,7 +633,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
             List<V> levelVertices = tree.get(i);
             cumulativeCount += levelVertices.size();
             
-            if (cumulativeCount >= n / 2) {
+            if (cumulativeCount > n / 2) {
                 return i;
             }
         }
@@ -714,7 +714,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     private int findLevelAboveCenter(List<List<V>> tree, int middle){
         int sqrtN = (int) Math.sqrt(n);
 
-        for(int i = middle+1;i<tree.size();i++) {
+        for(int i = middle;i<tree.size();i++) {
             int levelSize = tree.get(i).size();
             int D = i-middle;
             if(2*(sqrtN-D)>=levelSize)return i;
@@ -737,6 +737,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
 
         for (V v:treeLevels.get(l0+1)) {
+
             spanningTree.addEdge(topVertex, v);
         }
     }

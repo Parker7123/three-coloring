@@ -11,18 +11,21 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.example.algorithms.coloring.ThreeColoringUtils.*;
 
 /**
  * Brute force implementation of three coloring
+ *
  * @param <V> Vertex type
  * @param <E> Edge type
  */
 public class ThreeColoringForGraphAndColoredNeighbors<V, E> implements VertexColoringAlgorithm<V>,
         Iterator<Coloring<V>>, Iterable<Coloring<V>> {
+
+    private static final Set<Integer> possibleColors = Set.of(1, 2, 3);
     private final Graph<V, E> sourceGraph;
-    private final Map<V, Set<Integer>> restrictedColors;
+    private final Map<V, Set<Integer>> allowedColors;
     private final Stack<VertexWithColor<V, Integer>> colorsToVerify = new Stack<>();
     private final Map<V, Integer> coloredVertices = new HashMap<>();
     private final LinkedList<V> verticesList;
@@ -35,7 +38,7 @@ public class ThreeColoringForGraphAndColoredNeighbors<V, E> implements VertexCol
 
     public ThreeColoringForGraphAndColoredNeighbors(Graph<V, E> sourceGraph, Map<V, Set<Integer>> restrictedColors) {
         this.sourceGraph = sourceGraph;
-        this.restrictedColors = restrictedColors;
+        this.allowedColors = generateAllowedColors(sourceGraph.vertexSet(), restrictedColors);
         this.coloringImpossible = restrictedColors.values().stream()
                 .anyMatch(colors -> colors.size() == NUMBER_OF_COLORS);
         this.verticesList = new LinkedList<>(sourceGraph.vertexSet());
@@ -48,8 +51,17 @@ public class ThreeColoringForGraphAndColoredNeighbors<V, E> implements VertexCol
         return generateNextValidColoring().orElse(null);
     }
 
+    private static <V> Map<V, Set<Integer>> generateAllowedColors(Set<V> vertices, Map<V, Set<Integer>> restrictedColors) {
+        return vertices.stream()
+                .collect(toMap(v -> v, v -> {
+                    var set = new HashSet<>(possibleColors);
+                    set.removeAll(restrictedColors.getOrDefault(v, Set.of()));
+                    return set;
+                }));
+    }
+
     public List<Coloring<V>> getListOfValidColorings() {
-        if (coloringImpossible){
+        if (coloringImpossible) {
             return List.of();
         }
         return coloringListSupplier.get();
@@ -58,7 +70,7 @@ public class ThreeColoringForGraphAndColoredNeighbors<V, E> implements VertexCol
     private void initIterator() {
         if (!coloringImpossible && !sourceGraph.vertexSet().isEmpty()) {
             V firstVertex = verticesList.getFirst();
-            allowedColors(firstVertex).forEach(color -> colorsToVerify.push(new VertexWithColor<>(firstVertex, color)));
+            allowedColors.get(firstVertex).forEach(color -> colorsToVerify.push(new VertexWithColor<>(firstVertex, color)));
             iterator.next();
         }
     }
@@ -98,11 +110,11 @@ public class ThreeColoringForGraphAndColoredNeighbors<V, E> implements VertexCol
     }
 
     private void fillAllColorsTillTheEnd(Stack<VertexWithColor<V, Integer>> colorsToVerify,
-                                                    Map<V, Integer> coloredVertices, ListIterator<V> iterator) {
+                                         Map<V, Integer> coloredVertices, ListIterator<V> iterator) {
         while (iterator.hasNext()) {
             V currentVertex = iterator.next();
-            coloredVertices.put(currentVertex, allowedColors(currentVertex).get(0));
-            allowedColors(currentVertex).stream()
+            coloredVertices.put(currentVertex, allowedColors.get(currentVertex).stream().findFirst().get());
+            allowedColors.get(currentVertex).stream()
                     .skip(1)
                     .forEach(color -> colorsToVerify.push(new VertexWithColor<>(currentVertex, color)));
         }
@@ -110,11 +122,6 @@ public class ThreeColoringForGraphAndColoredNeighbors<V, E> implements VertexCol
 
     public Stream<Coloring<V>> asStream() {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(this, Spliterator.NONNULL), false);
-    }
-
-    private List<Integer> allowedColors(V vertex) {
-        Set<Integer> disallowedColors = restrictedColors.getOrDefault(vertex, Set.of());
-        return Stream.of(0, 1, 2).filter(color -> !disallowedColors.contains(color)).collect(toList());
     }
 
     private void fetchNextColoring() {

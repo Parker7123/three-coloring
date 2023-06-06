@@ -70,7 +70,7 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     }
 
     private void complexStage(Graph<V,E> G, Graph<V,E> spanningTree,
-                              PlanarityTestingAlgorithm.Embedding embedding, EmbeddingWithFaces triangulatedFaces){
+                              PlanarityTestingAlgorithm.Embedding<V, E> embedding, EmbeddingWithFaces<V, E> triangulatedFaces){
         E cycleEdge = pickNontreeEdge(spanningTree,G);
         V v1 = sourceGraph.getEdgeSource(cycleEdge);
         V v2 = sourceGraph.getEdgeTarget(cycleEdge);

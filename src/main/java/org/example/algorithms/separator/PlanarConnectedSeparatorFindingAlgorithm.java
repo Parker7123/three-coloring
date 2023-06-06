@@ -723,9 +723,11 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
     }
     private void modifyGraphForComplexStage(Graph<V, E> spanningTree,List<List<V>> treeLevels, int l0,int l2){
 
-        for(int i=l2;i<treeLevels.size();i++){
-            for (V v:treeLevels.get(i)) {
-                spanningTree.removeVertex(v);
+        if (l2 != l0+1) {
+            for(int i=l2;i<treeLevels.size();i++){
+                for (V v:treeLevels.get(i)) {
+                    spanningTree.removeVertex(v);
+                }
             }
         }
         V topVertex = treeLevels.get(0).get(0);
@@ -737,7 +739,6 @@ public class PlanarConnectedSeparatorFindingAlgorithm<V, E> implements Separator
         }
 
         for (V v:treeLevels.get(l0+1)) {
-
             spanningTree.addEdge(topVertex, v);
         }
     }

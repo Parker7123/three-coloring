@@ -56,13 +56,10 @@ public class PlanarThreeColoring<V, E> implements VertexColoringAlgorithm<V> {
         Graph<V, E> graphInducedBySeparator = subgraph(graph, separator);
         var threeColoringAlgorithm = new ThreeColoringForGraphAndColoredNeighbors<>(graphInducedBySeparator,
                 unmodifiableMap(restrictedColors));
-        List<Coloring<V>> validSeparatorColorings = threeColoringAlgorithm.getListOfValidColorings();
-        if (validSeparatorColorings.isEmpty()) {
-            return null;
-        }
+
         Graph<V, E> graphInducedBySubsetA = subgraph(graph, subsetA);
         Graph<V, E> graphInducedBySubsetB = subgraph(graph, subsetB);
-        for (Coloring<V> separatorColoring : validSeparatorColorings) {
+        for (Coloring<V> separatorColoring : threeColoringAlgorithm) {
             var currentlyRestrictedColors = generateRestrictedColors(separatorColoring);
             var mergedRestrictedColors = mergeRestrictedColors(restrictedColors, currentlyRestrictedColors);
             // TODO: idea: introduce map: vertex -> color

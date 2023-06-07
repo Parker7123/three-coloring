@@ -29,3 +29,9 @@ test {
 application {
     getMainClass().set('org.example.Main')
 }
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
